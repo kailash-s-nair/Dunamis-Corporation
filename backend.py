@@ -29,7 +29,6 @@ def add_item(file, s_length, s_width, p_length, p_width, species):
 
         new = str(s_length) + ',' + str(s_width) + ',' + str(p_length) + ',' + str(p_width) + ',' + species + '\n'
 
-        fd.write('\n')
         fd.write(new)
     return
 
