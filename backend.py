@@ -33,17 +33,32 @@ def add_item(file, s_length, s_width, p_length, p_width, species):
         fd.write(new)
     return
 
-def delete_row(file, n):
+def del_item(file, n):
+    if(n == 0):
+        print('Do not attempt to delete the first row.')
+        return
+
+    i = 0
+    items = []
+    
     with open(file, newline='') as fd:
-        i = 1
-        items = []
-        for row in fd:
-            if i == n:
-                next(fd)
+        iris_reader = csv.reader(fd, delimiter=',', quotechar='|')
+        done = False
+        for row in iris_reader:
+            if(not done and i == n):
+                done = True
             else:
-                items[i] = row
-                i = i+1
-        
+                items.append(row)
+            i = i+1
+            
+
+    with open(file, 'w', newline='') as fd:
+        iris_writer = csv.writer(fd, delimiter=',', quotechar='|')
+        for j in items:
+            iris_writer.writerow(j)
+
+    print(items)
+
     return
 
 read_items('iris.csv')
