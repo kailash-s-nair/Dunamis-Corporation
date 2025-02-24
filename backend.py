@@ -1,101 +1,42 @@
-import csv
+import mysql.connector
+import json
 
-#Reads every item in a csv file.
-#file:  csv file name.
-def print_rows(file):
-    with open(file, newline='') as fd:
-        f_reader = csv.reader(fd, delimiter=',')
-
-        print('\t'.join(next(f_reader)))
-
-        for row in f_reader:
-            print('\t\t'.join(row))
-    return
-
-#Reads a specified row in a csv file.
-#file:  csv file name.
-#n:     Row number.
-def print_row(file, n):
-    with open(file, newline='') as fd:
-        f_reader = csv.reader(fd, delimiter=',')
-
-        for i in range(n):
-            next(f_reader)
+class Navigator:
+    #Loads credentials, accesses database, creates cursor to database
+    def __init__(self):
+        with open('very secure credentials folder/credentials.json', 'r') as file:
+            cred = json.load(file)
         
-        print('\t\t'.join(next(f_reader)))
-
-    return
-
-#Appends an entry to the end of a given csv file.
-#file:      csv file name.
-#*values:   Any number of values to be placed in the columns.
-def add_row(file, *values):
-    with open(file, newline='') as fd:
-        reader = csv.reader(fd, delimiter=',')
-        length = len(next(reader))
-
-    with open(file, 'a', newline='') as fd:
-        reader = csv.reader(fd, delimiter=',')
-
-        new = '\n'
-
-        if(len(values) != length):
-            print('Number of entries does not match')
-            return
-
-        for value in values:
-            new = new + str(value)
-            if(value != values[-1]):
-                new = new + ','
+        self.db = mysql.connector.connect(
+            user=cred.get('user'),
+            password = cred.get('password'),
+            database = 'items_database',
+            host = '172.29.160.1'
+        )
         
-        fd.write(new)
-    return
+        self.cursor = self.db.cursor()
 
-#Appends an entry to the end of a given csv file (given as a series of lists).
-#file:      csv file name.
-#*items:    Any number of items to be appended into the csv file. 
-#           Remember to only use the same number of columns per entry.
-def add_rows(file, *items):
-    for item in items:
-        add_row(file, *item)
-
-#Deletes one or several rows in a given csv file.
-#file:  csv file name.
-#n:     Row to delete.
-def del_row(file, *n):
-    for i in n:
-        if(i <= 0):
-            print('invalid entry')
-            return
-
-    with open(file, newline='') as fd:
-        f_dict_reader = csv.DictReader(fd)
-        items = []
-        for rows in f_dict_reader:
-            items.append(rows)
-
-    remove = []
-
-    for i in n:
-        remove.append(items[i-1])
+    #Returns list of tuples containing every product
+    def get_products(self):
+        stmt = 'SELECT products.product_name AS product, categories.category_name AS category\
+                FROM products\
+                INNER JOIN categories ON products.category_id=categories.category_id;'
+        self.cursor.execute(stmt, params=None)
+        return self.cursor.fetchall()
     
-    items = [x for x in items if x not in remove]
+    def add_product(self, name, category_id):
+        stmt = 'INSERT INTO products (product_name, category_id) VALUES (%s %s)'
+        args = (name, category_id)
+        self.cursor.execute(stmt, params=args)
+        self.db.commit()
     
-    with open(file, 'w', newline ='') as fd:
-        f_writer = csv.writer(fd)
-        f_writer.writerow(items[0])
-        for item in items:
-            f_writer.writerow(item.values())
-    return
+    def __exit__(self):
+        self.cursor.close()
+        self.db.close()
 
-print('All entries:')
-print_rows('iris.csv')
-
-a = 5
-print('\nEntry on row ' + str(a) + ':')
-print_row('iris.csv', a)
-
-#add_item('iris.csv', 1, 2, 3, 4, 'bepis')
-#add_items('iris.csv', [1, 2, 3, 4, 'bepis'], [5, 6, 7, 8, 'bepis2'])
-
-#del_row('iris.csv', 1, 2, 3)
+if __name__ == '__main__':
+    navi = Navigator()
+    products = navi.get_products()
+    for name, category in products:
+        print('name\t\tcategory')
+        print(name + '\t' + category)
