@@ -1,5 +1,6 @@
 import mysql.connector
 import json
+from tabulate import tabulate
 
 class Navigator:
     #Loads credentials, accesses database, creates cursor to database
@@ -24,9 +25,20 @@ class Navigator:
         self.cursor.execute(stmt, params=None)
         return self.cursor.fetchall()
     
+    # Product IDs auto-increment; no need to add manually
+    # Type of product specified by Category ID number (see below)
     def add_product(self, name, category_id):
         stmt = 'INSERT INTO products (product_name, category_id) VALUES (%s %s)'
         args = (name, category_id)
+        self.cursor.execute(stmt, params=args)
+        self.db.commit()
+    
+    # Category IDS auto-increment; no need to add manually
+    # Category ID keys:
+    # 1. GPU
+    def add_category(self, category_name):
+        stmt = 'INSERT INTO products (category_name) VALUES (%s)'
+        args = (category_name)
         self.cursor.execute(stmt, params=args)
         self.db.commit()
     
@@ -37,6 +49,4 @@ class Navigator:
 if __name__ == '__main__':
     navi = Navigator()
     products = navi.get_products()
-    for name, category in products:
-        print('name\t\tcategory')
-        print(name + '\t' + category)
+    print(tabulate(products, headers=('name', 'category'))) # Not supposed to be the actual interface
