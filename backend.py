@@ -12,12 +12,29 @@ class Navigator:
             user=cred.get('user'),
             password = cred.get('password'),
             database = 'items_database',
-            host = '172.29.160.1'
+            host = '192.168.0.103'
         )
         
         self.cursor = self.db.cursor()
 
-    #Returns list of tuples containing every product
+    #Create the tables if they don't exist
+    def create_tables(self):
+        stmt = 'CREATE TABLE products(\
+                product_id INT NOT NULL AUTO_INCREMENT,\
+                product_name VARCHAR(20),\
+                category_id INT,\
+                PRIMARY KEY (product_id))'
+        
+        self.cursor.execute(stmt, params=None)
+        
+        stmt = 'CREATE TABLE categories(\
+                category_id INT NOT NULL AUTO_INCREMENT,\
+                category_name VARCHAR(20),\
+                PRIMARY KEY (product_id))'
+        
+        self.cursor.execute(stmt, params=None)
+
+    #Returns list of string tuples containing every product
     def get_products(self):
         stmt = 'SELECT products.product_name AS product, categories.category_name AS category\
                 FROM products\
@@ -28,20 +45,26 @@ class Navigator:
     # Product IDs auto-increment; no need to add manually
     # Type of product specified by Category ID number (see below)
     def add_product(self, name, category_id):
-        stmt = 'INSERT INTO products (product_name, category_id) VALUES (%s %s)'
+        stmt = 'INSERT INTO products (product_name, category_id)\
+                VALUES (%s %s)'
         args = (name, category_id)
         self.cursor.execute(stmt, params=args)
         self.db.commit()
     
-    # Category IDS auto-increment; no need to add manually
+    # Category IDs auto-increment; no need to add manually
     # Category ID keys:
     # 1. GPU
     def add_category(self, category_name):
-        stmt = 'INSERT INTO products (category_name) VALUES (%s)'
+        stmt = 'INSERT INTO products (category_name)\
+                VALUES (%s)'
         args = (category_name)
         self.cursor.execute(stmt, params=args)
         self.db.commit()
     
+    #TODO:  Add normalized category-specific specifications (brand, hardware specs), 
+    #       Add current inventory (num. of) column to products table
+    
+    #Closes cursor and database upon program exit
     def __exit__(self):
         self.cursor.close()
         self.db.close()
