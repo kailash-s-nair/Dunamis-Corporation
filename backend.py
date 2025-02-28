@@ -27,8 +27,10 @@ class Navigator:
         else:
             return False
 
+    #Create auto-incrementing table for computer part spec
+    #When displaying data, JOIN on [category]_id, SELECT [spec].spec_name, or similar
     def create_spec_table(self, spec):
-        if(not self.exists(spec)):
+        if(not self.exists(spec)): #String literal must be used here
             stmt = f'CREATE TABLE {spec}(\
                     {spec}_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,\
                     {spec}_name VARCHAR(20))'
@@ -36,7 +38,7 @@ class Navigator:
             self.cursor.execute(stmt, params=None)
             self.db.commit()
 
-    #Create the tables if they don't exist
+    #Create basic tables if they don't exist
     def create_tables(self):
         if not self.exists('products'):
 
