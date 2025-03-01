@@ -17,6 +17,7 @@ class Navigator:
         
         self.cursor = self.db.cursor()
 
+    #Returns true or false if table exists or not
     def exists(self, name):
         stmt = "SHOW TABLES LIKE %s"
         args = (name,)
@@ -29,11 +30,11 @@ class Navigator:
 
     #Create auto-incrementing table for computer part spec
     #When displaying data, JOIN on [category]_id, SELECT [spec].spec_name, or similar
-    def create_spec_table(self, spec):
-        if(not self.exists(spec)): #String literal must be used here
-            stmt = f'CREATE TABLE {spec}(\
-                    {spec}_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,\
-                    {spec}_name VARCHAR(20))'
+    def create_spec_table(self, spec_name, var_name):
+        if(not self.exists(spec_name)): #String literal must be used here
+            stmt = f'CREATE TABLE {spec_name}(\
+                    {var_name}_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,\
+                    {var_name}_name VARCHAR(20))'
 
             self.cursor.execute(stmt, params=None)
             self.db.commit()
@@ -85,8 +86,8 @@ class Navigator:
         self.cursor.execute(stmt, params=args)
         self.db.commit()
     
-    #TODO:  Add normalized category-specific specifications (brand, hardware specs), 
-    #       Add current inventory (num. of) column to products table
+    #TODO:  Add current inventory (num. of) column to products table
+    #       Add way to quickly create item categories
     
     #Closes cursor and database upon program exit
     def __exit__(self):
@@ -105,7 +106,8 @@ if __name__ == '__main__':
         
         if(val == '2'):
             val = input('Enter spec name: ')
-            navi.create_spec_table(val)
+            val2 = input('Enter value name: ')
+            navi.create_spec_table(val, val2)
 
         if(val == '3'):
             val = input('Enter table name: ')
