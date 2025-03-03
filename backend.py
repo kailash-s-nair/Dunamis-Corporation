@@ -93,7 +93,7 @@ class Navigator:
         
         #Ensure part type name is formatted correctly
         part_type_name = str.lower(part_type_name)
-        if part_type_name != None:
+        if part_type_name == None:
             return
         if part_type_name[-2] == 's':
             part_type_name = part_type_name[:-2]
@@ -183,7 +183,7 @@ if __name__ == '__main__':
                 temp2 = input('Add specification variable name (x to cancel): ')
                 if(temp2 == 'x'):
                     break
-                    
+                
                 if(temp1 != None and temp2 != None):
                     vals.append((temp1, temp2))
             
