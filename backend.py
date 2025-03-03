@@ -1,5 +1,6 @@
 import mysql.connector
 import json
+import socket
 from tabulate import tabulate
 
 class Navigator:
@@ -8,13 +9,13 @@ class Navigator:
         with open('very secure credentials folder/credentials.json', 'r') as file:
             cred = json.load(file)
         
-        ip = input("Enter current IP address: ") #School: 10.160.5.178
+        hostname = socket.gethostname()
         
         self.db = mysql.connector.connect(
             user=cred.get('user'),
             password = cred.get('password'),
             database = 'items_database',
-            host = ip #Server (i.e. Clover's laptop) has to be on
+            host = socket.gethostbyname(hostname) #Server (i.e. Clover's laptop) has to be on
         )
         
         self.cursor = self.db.cursor()
@@ -97,12 +98,12 @@ class Navigator:
         
         # Create statement to be sent to the cursor
         stmt = f'CREATE TABLE {category_name} ('
-        stmt += f'{category_name}_id INT NOT NULL, '
+        stmt += f'{category_name}_id INT NOT NULL AUTO_INCREMENT, '
         stmt += 'product_id INT NOT NULL, '
         
         # Add attribute variable name columns
         for spec in specifications:
-            stmt += f'{spec[1]}_id INT NOT NULL AUTO_INCREMENT'
+            stmt += f'{spec[1]}_id INT NOT NULL'
             stmt += ', '
         
         # Link each table to the tables that were just created
@@ -134,15 +135,23 @@ if __name__ == '__main__':
 
     while(True):
         val = input('1. Get Products\n2. Add spec table\n3. Table exists\n4. Create new category\nx. Exit\n')
+        
+        if (val == 'x'):
+            break
 
         if(val == '1'):
             products = navi.get_products()
             print(tabulate(products, headers=('name', 'category'))) 
         
         if(val == '2'):
-            val = input('Enter spec name: ')
+            val1 = input('Enter spec name (x to cancel): ')
+            if(val1 == 'x'):
+                continue
             val2 = input('Enter value name: ')
-            navi.create_spec_table(val, val2)
+            if(val2 == 'x'):
+                continue
+            if(val1 != None and val2 != None):
+                navi.create_spec_table(val, val2)
 
         if(val == '3'):
             val = input('Enter table name: ')
@@ -150,20 +159,25 @@ if __name__ == '__main__':
 
         if(val == '4'):
             vals = list()
-            val = input('Create part type name: ')
+            val = input('Create part type name (x to cancel): ')
+            
+            if(val == 'x'):
+                break
+            
             while(True):
-                temp1 = input('Add category specification (x to exit): ')
-                if(not temp1 == 'x'):
-                    temp2 = input('Add specification variable name: ')
-                    vals.append((temp1, temp2))
-                else:
+                temp1 = input('Add category specification (x to cancel): ')
+                if(temp1 == 'x'):
                     break
+                
+                temp2 = input('Add specification variable name (x to cancel): ')
+                if(temp2 == 'x'):
+                    break
+                    
+                if(temp1 != None and temp2 != None):
+                    vals.append((temp1, temp2))
             
             vals = tuple(vals)
             
-            navi.add_part_type(val, *vals)
-            
-            print(f'{val} added to categories')
-            
-        if(val == 'x'):
-            break
+            if(vals != None):
+                navi.add_part_type(val, *vals)
+                (f'New part type {val} successfully created')
