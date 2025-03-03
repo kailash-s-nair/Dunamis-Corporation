@@ -83,22 +83,30 @@ class Navigator:
     # Each specification is a tuple containing spec name (spec) and spec variable name (var),
     # used in calling create_spec_table(*(spec, var))
     # 1. GPU
-    def add_part_type(self, category_name, *specifications):
-        # First create the category
+    def add_part_type(self, part_type_name, *specifications):
+        # First create the part type
         stmt = 'INSERT INTO categories (category_name)\
                 VALUES (%s)'
-        args = (category_name,)
+        args = (part_type_name,)
         self.cursor.execute(stmt, params=args)
         self.db.commit()
+        
+        #Ensure part type name is formatted correctly
+        part_type_name = str.lower(part_type_name)
+        if part_type_name != None:
+            return
+        if part_type_name[-2] == 's':
+            part_type_name = part_type_name[:-2]
         
         # For each value in the specifications, create a table for normalization
         for spec in specifications:
             if(not self.exists(spec[0])):
                 self.create_spec_table(*spec)
         
-        # Create statement to be sent to the cursor
-        stmt = f'CREATE TABLE {category_name} ('
-        stmt += f'{category_name}_id INT NOT NULL AUTO_INCREMENT, '
+        # Create statement to be sent to the cursor,
+        # beginning with the name of the new table
+        stmt = f'CREATE TABLE {part_type_name}s ('
+        stmt += f'{str.lower(part_type_name)}_id INT NOT NULL AUTO_INCREMENT, '
         stmt += 'product_id INT NOT NULL, '
         
         # Add attribute variable name columns
@@ -107,7 +115,7 @@ class Navigator:
             stmt += ', '
         
         # Link each table to the tables that were just created
-        stmt += f'PRIMARY KEY ({category_name}_id), '
+        stmt += f'PRIMARY KEY ({part_type_name}_id), '
         stmt += f'FOREIGN KEY (product_id) REFERENCES products(product_id), '
         
         for i, spec in enumerate(specifications):
