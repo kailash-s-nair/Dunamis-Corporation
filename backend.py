@@ -48,8 +48,8 @@ class Navigator:
 
             stmt = 'CREATE TABLE products(\
                     product_id INT NOT NULL AUTO_INCREMENT,\
-                    product_name VARCHAR(20),\
-                    category_id INT,\
+                    product_name VARCHAR(20) NOT NULL,\
+                    category_id INT NOT NULL,\
                     PRIMARY KEY (product_id))'
             
             self.cursor.execute(stmt, params=None)
@@ -57,7 +57,7 @@ class Navigator:
         if not self.exists('categories'):
             stmt = 'CREATE TABLE categories(\
                     category_id INT NOT NULL AUTO_INCREMENT,\
-                    category_name VARCHAR(20),\
+                    category_name VARCHAR(20) NOT NULL,\
                     PRIMARY KEY (product_id))'
             
             self.cursor.execute(stmt, params=None)
