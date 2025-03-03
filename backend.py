@@ -12,7 +12,7 @@ class Navigator:
             user=cred.get('user'),
             password = cred.get('password'),
             database = 'items_database',
-            host = '192.168.0.103' #Server (i.e. Clover's laptop) has to be on
+            host = '10.160.5.178' #Server (i.e. Clover's laptop) has to be on
         )
         
         self.cursor = self.db.cursor()
@@ -79,12 +79,29 @@ class Navigator:
     # Category IDs auto-increment; no need to add manually
     # Category ID keys:
     # 1. GPU
-    def add_category(self, category_name):
-        stmt = 'INSERT INTO categories (category_name)\
-                VALUES (%s)'
-        args = (category_name,)
-        self.cursor.execute(stmt, params=args)
-        self.db.commit()
+    def add_category(self, category_name, *specifications):
+        # stmt = 'INSERT INTO categories (category_name)\
+        #         VALUES (%s)'
+        # args = (category_name,)
+        # self.cursor.execute(stmt, params=args)
+        # self.db.commit()
+        
+        # for spec in specifications:
+        #     self.create_spec_table(spec)
+        
+        stmt = f'CREATE TABLE {category_name} ('
+        
+        for i, spec in enumerate(specifications):
+            stmt += f'{spec}_id INT NOT NULL'
+            if not i == len(specifications) - 1:
+                stmt += ', '
+        else:
+            stmt += ')'
+            
+        print(stmt)
+            
+        # self.cursor.execute(stmt, params=None)
+        # self.db.commit()
     
     #TODO:  Add current inventory (num. of) column to products table
     #       Add way to quickly create item categories
@@ -96,6 +113,9 @@ class Navigator:
 
 if __name__ == '__main__':
     navi = Navigator() # Not supposed to be the actual interface
+    
+    print('add_category(a, b, c, d)')
+    print(navi.add_category('a', 'b', 'c', 'd'))
 
     while(True):
         val = input('1. Get Products\n2. Add spec table\n3. Table exists\n4. Create new category\nx. Exit\n')
