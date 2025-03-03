@@ -78,32 +78,48 @@ class Navigator:
         self.cursor.execute(stmt, params=args)
         self.db.commit()
     
-    # Category IDs auto-increment; no need to add manually
-    # Category ID keys:
+    # Create a new part type with specifications;
+    # Each specification is a tuple containing spec name (spec) and spec variable name (var),
+    # used in calling create_spec_table(*(spec, var))
     # 1. GPU
-    def add_category(self, category_name, *specifications):
-        # stmt = 'INSERT INTO categories (category_name)\
-        #         VALUES (%s)'
-        # args = (category_name,)
-        # self.cursor.execute(stmt, params=args)
-        # self.db.commit()
+    def add_part_type(self, category_name, *specifications):
+        # First create the category
+        stmt = 'INSERT INTO categories (category_name)\
+                VALUES (%s)'
+        args = (category_name,)
+        self.cursor.execute(stmt, params=args)
+        self.db.commit()
         
-        # for spec in specifications:
-        #     self.create_spec_table(spec)
+        # For each value in the specifications, create a table for normalization
+        for spec in specifications:
+            if(not self.exists(spec[0])):
+                self.create_spec_table(*spec)
         
+        # Create statement to be sent to the cursor
         stmt = f'CREATE TABLE {category_name} ('
+        stmt += f'{category_name}_id INT NOT NULL, '
+        stmt += 'product_id INT NOT NULL, '
+        
+        # Add attribute variable name columns
+        for spec in specifications:
+            stmt += f'{spec[1]}_id INT NOT NULL AUTO_INCREMENT'
+            stmt += ', '
+        
+        # Link each table to the tables that were just created
+        stmt += f'PRIMARY KEY ({category_name}_id), '
+        stmt += f'FOREIGN KEY (product_id) REFERENCES products(product_id), '
         
         for i, spec in enumerate(specifications):
-            stmt += f'{spec}_id INT NOT NULL'
-            if not i == len(specifications) - 1:
+            stmt += f'FOREIGN KEY ({spec[1]}_id) REFERENCES {spec[0]}({spec[1]}_id)'
+            if i < len(specifications)-1:
                 stmt += ', '
         else:
             stmt += ')'
-            
+        
         print(stmt)
             
-        # self.cursor.execute(stmt, params=None)
-        # self.db.commit()
+        self.cursor.execute(stmt, params=None)
+        self.db.commit()
     
     #TODO:  Add current inventory (num. of) column to products table
     #       Add way to quickly create item categories
@@ -115,9 +131,6 @@ class Navigator:
 
 if __name__ == '__main__':
     navi = Navigator() # Not supposed to be the actual interface
-    
-    print('add_category(a, b, c, d)')
-    print(navi.add_category('a', 'b', 'c', 'd'))
 
     while(True):
         val = input('1. Get Products\n2. Add spec table\n3. Table exists\n4. Create new category\nx. Exit\n')
@@ -136,12 +149,21 @@ if __name__ == '__main__':
             print(navi.exists(val))
 
         if(val == '4'):
-            val = input('Create category name: ')
-            navi.add_category(val)
-            print('%s added to categories' % val)
-        
+            vals = list()
+            val = input('Create part type name: ')
+            while(True):
+                temp1 = input('Add category specification (x to exit): ')
+                if(not temp1 == 'x'):
+                    temp2 = input('Add specification variable name: ')
+                    vals.append((temp1, temp2))
+                else:
+                    break
+            
+            vals = tuple(vals)
+            
+            navi.add_part_type(val, *vals)
+            
+            print(f'{val} added to categories')
+            
         if(val == 'x'):
             break
-
-        print()
-    
