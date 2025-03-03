@@ -147,7 +147,7 @@ if __name__ == '__main__':
             val1 = input('Enter spec name (x to cancel): ')
             if(val1 == 'x'):
                 continue
-            val2 = input('Enter value name: ')
+            val2 = input('Enter value name (x to cancel): ')
             if(val2 == 'x'):
                 continue
             if(val1 != None and val2 != None):
