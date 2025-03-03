@@ -8,11 +8,13 @@ class Navigator:
         with open('very secure credentials folder/credentials.json', 'r') as file:
             cred = json.load(file)
         
+        ip = input("Enter current IP address: ") #School: 10.160.5.178
+        
         self.db = mysql.connector.connect(
             user=cred.get('user'),
             password = cred.get('password'),
             database = 'items_database',
-            host = '10.160.5.178' #Server (i.e. Clover's laptop) has to be on
+            host = ip #Server (i.e. Clover's laptop) has to be on
         )
         
         self.cursor = self.db.cursor()
