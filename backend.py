@@ -131,7 +131,6 @@ class Navigator:
         self.db.commit()
     
     #TODO:  Add current inventory (num. of) column to products table
-    #       Add way to quickly create item categories
     
     #Closes cursor and database upon program exit
     def __exit__(self):
@@ -142,7 +141,11 @@ if __name__ == '__main__':
     navi = Navigator() # Not supposed to be the actual interface
 
     while(True):
-        val = input('1. Get Products\n2. Add spec table\n3. Table exists\n4. Create new category\nx. Exit\n')
+        val = input('1. Get Products'
+                    + '\n2. Add spec table'
+                    + '\n3. Table exists'
+                    + '\n4. Create new category'
+                    + '\nx. Exit\n')
         
         if (val == 'x'):
             break
