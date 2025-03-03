@@ -1,101 +1,125 @@
-import csv
+import mysql.connector
+import json
+from tabulate import tabulate
 
-#Reads every item in a csv file.
-#file:  csv file name.
-def print_rows(file):
-    with open(file, newline='') as fd:
-        f_reader = csv.reader(fd, delimiter=',')
-
-        print('\t'.join(next(f_reader)))
-
-        for row in f_reader:
-            print('\t\t'.join(row))
-    return
-
-#Reads a specified row in a csv file.
-#file:  csv file name.
-#n:     Row number.
-def print_row(file, n):
-    with open(file, newline='') as fd:
-        f_reader = csv.reader(fd, delimiter=',')
-
-        for i in range(n):
-            next(f_reader)
+class Navigator:
+    #Loads credentials, accesses database, creates cursor to database
+    def __init__(self):
+        with open('very secure credentials folder/credentials.json', 'r') as file:
+            cred = json.load(file)
         
-        print('\t\t'.join(next(f_reader)))
-
-    return
-
-#Appends an entry to the end of a given csv file.
-#file:      csv file name.
-#*values:   Any number of values to be placed in the columns.
-def add_row(file, *values):
-    with open(file, newline='') as fd:
-        reader = csv.reader(fd, delimiter=',')
-        length = len(next(reader))
-
-    with open(file, 'a', newline='') as fd:
-        reader = csv.reader(fd, delimiter=',')
-
-        new = '\n'
-
-        if(len(values) != length):
-            print('Number of entries does not match')
-            return
-
-        for value in values:
-            new = new + str(value)
-            if(value != values[-1]):
-                new = new + ','
+        self.db = mysql.connector.connect(
+            user=cred.get('user'),
+            password = cred.get('password'),
+            database = 'items_database',
+            host = '192.168.0.103' #Server (i.e. Clover's laptop) has to be on
+        )
         
-        fd.write(new)
-    return
+        self.cursor = self.db.cursor()
 
-#Appends an entry to the end of a given csv file (given as a series of lists).
-#file:      csv file name.
-#*items:    Any number of items to be appended into the csv file. 
-#           Remember to only use the same number of columns per entry.
-def add_rows(file, *items):
-    for item in items:
-        add_row(file, *item)
+    #Returns true or false if table exists or not
+    def exists(self, name):
+        stmt = "SHOW TABLES LIKE %s"
+        args = (name,)
+        self.cursor.execute(stmt, params=args)
+        result = self.cursor.fetchone()
+        if(result):
+            return True
+        else:
+            return False
 
-#Deletes one or several rows in a given csv file.
-#file:  csv file name.
-#n:     Row to delete.
-def del_row(file, *n):
-    for i in n:
-        if(i <= 0):
-            print('invalid entry')
-            return
+    #Create auto-incrementing table for computer part spec
+    #When displaying data, JOIN on [category]_id, SELECT [spec].spec_name, or similar
+    def create_spec_table(self, spec_name, var_name):
+        if(not self.exists(spec_name)): #String literal must be used here
+            stmt = f'CREATE TABLE {spec_name}(\
+                    {var_name}_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,\
+                    {var_name}_name VARCHAR(20))'
 
-    with open(file, newline='') as fd:
-        f_dict_reader = csv.DictReader(fd)
-        items = []
-        for rows in f_dict_reader:
-            items.append(rows)
+            self.cursor.execute(stmt, params=None)
+            self.db.commit()
 
-    remove = []
+    #Create basic tables if they don't exist
+    def create_tables(self):
+        if not self.exists('products'):
 
-    for i in n:
-        remove.append(items[i-1])
+            stmt = 'CREATE TABLE products(\
+                    product_id INT NOT NULL AUTO_INCREMENT,\
+                    product_name VARCHAR(20),\
+                    category_id INT,\
+                    PRIMARY KEY (product_id))'
+            
+            self.cursor.execute(stmt, params=None)
+        
+        if not self.exists('categories'):
+            stmt = 'CREATE TABLE categories(\
+                    category_id INT NOT NULL AUTO_INCREMENT,\
+                    category_name VARCHAR(20),\
+                    PRIMARY KEY (product_id))'
+            
+            self.cursor.execute(stmt, params=None)
+
+    #Returns list of string tuples containing every product
+    def get_products(self):
+        stmt = 'SELECT products.product_name AS product, categories.category_name AS category\
+                FROM products\
+                INNER JOIN categories ON products.category_id=categories.category_id'
+        self.cursor.execute(stmt, params=None)
+        return self.cursor.fetchall()
     
-    items = [x for x in items if x not in remove]
+    # Product IDs auto-increment; no need to add manually
+    # Type of product specified by Category ID number (see below)
+    def add_product(self, name, category_id):
+        stmt = 'INSERT INTO products (product_name, category_id)\
+                VALUES (%s, %s)'
+        args = (name, category_id)
+        self.cursor.execute(stmt, params=args)
+        self.db.commit()
     
-    with open(file, 'w', newline ='') as fd:
-        f_writer = csv.writer(fd)
-        f_writer.writerow(items[0])
-        for item in items:
-            f_writer.writerow(item.values())
-    return
+    # Category IDs auto-increment; no need to add manually
+    # Category ID keys:
+    # 1. GPU
+    def add_category(self, category_name):
+        stmt = 'INSERT INTO categories (category_name)\
+                VALUES (%s)'
+        args = (category_name,)
+        self.cursor.execute(stmt, params=args)
+        self.db.commit()
+    
+    #TODO:  Add current inventory (num. of) column to products table
+    #       Add way to quickly create item categories
+    
+    #Closes cursor and database upon program exit
+    def __exit__(self):
+        self.cursor.close()
+        self.db.close()
 
-print('All entries:')
-print_rows('iris.csv')
+if __name__ == '__main__':
+    navi = Navigator() # Not supposed to be the actual interface
 
-a = 5
-print('\nEntry on row ' + str(a) + ':')
-print_row('iris.csv', a)
+    while(True):
+        val = input('1. Get Products\n2. Add spec table\n3. Table exists\n4. Create new category\nx. Exit\n')
 
-#add_item('iris.csv', 1, 2, 3, 4, 'bepis')
-#add_items('iris.csv', [1, 2, 3, 4, 'bepis'], [5, 6, 7, 8, 'bepis2'])
+        if(val == '1'):
+            products = navi.get_products()
+            print(tabulate(products, headers=('name', 'category'))) 
+        
+        if(val == '2'):
+            val = input('Enter spec name: ')
+            val2 = input('Enter value name: ')
+            navi.create_spec_table(val, val2)
 
-#del_row('iris.csv', 1, 2, 3)
+        if(val == '3'):
+            val = input('Enter table name: ')
+            print(navi.exists(val))
+
+        if(val == '4'):
+            val = input('Create category name: ')
+            navi.add_category(val)
+            print('%s added to categories' % val)
+        
+        if(val == 'x'):
+            break
+
+        print()
+    
