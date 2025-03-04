@@ -151,9 +151,10 @@ class Navigator:
         
     #Returns column name if a part type has a given spec in it, None otherwise
     def spec_exists_in_part(self, part, spec):
-        temp = self.cursor.execute(f'SHOW COLUMNS FROM {part} LIKE \'{spec}_id\'')
+        self.cursor.execute(f'SHOW COLUMNS FROM {part} LIKE \'{spec}_id\'')
+        temp = self.cursor.fetchone()[0]
         if(temp):
-            return str(self.cursor.fetchone()[0])
+            return str(temp)
         else:
             return None
     
@@ -241,6 +242,11 @@ class Navigator:
         else:
             raise ValueError('Part type ID not found')
     
+    def clear_table(self, table_name):
+        if(self.exists(table_name)):
+            self.cursor.execute(f'DELETE FROM {table_name}')
+            self.cursor.execute(f'ALTER TABLE {table_name} AUTO_INCREMENT = 0')
+    
     #TODO:  Add current inventory (num. of) column to products table
     
     #Closes cursor and database upon program exit
@@ -254,9 +260,10 @@ if __name__ == '__main__':
     while(True):
         val = input('1. Get Products'
                     + '\n2. Table exists'
-                    + '\n3. Create new category'
+                    + '\n3. Create new part type'
                     + '\n4. Add new part'
                     + '\n5. Check if value exists in table'
+                    + '\n6. Clear table'
                     + '\nx. Exit\n')
         
         if (val == 'x'):
@@ -343,3 +350,6 @@ if __name__ == '__main__':
                 print(f'{val4} exists in table {val1} under {val3}: {temp}')
             else:
                 print(f'{val4} does not exist in the table')
+        if (val == '6'):
+            val1 = input('Enter table name: ')
+            navi.clear_table(val1)
