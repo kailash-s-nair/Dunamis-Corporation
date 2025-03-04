@@ -41,6 +41,8 @@ class Navigator:
 
             self.cursor.execute(stmt, params=None)
             self.db.commit()
+        else:
+            raise RuntimeError('table ' + spec_name + ' already exists')
 
     #Create basic tables if they don't exist
     def create_tables(self):
@@ -92,16 +94,23 @@ class Navigator:
         self.db.commit()
         
         #Ensure part type name is formatted correctly
-        part_type_name = str.lower(part_type_name)
         if part_type_name == None:
-            return
+            raise ValueError("Empty argument")
+        
+        part_type_name = str.lower(part_type_name)
+        
         if part_type_name[-2] == 's':
             part_type_name = part_type_name[:-2]
+            
+        if(self.exists(part_type_name + 's')):
+            raise RuntimeError("Part type already exists")
         
         # For each value in the specifications, create a table for normalization
         for spec in specifications:
             if(not self.exists(spec[0])):
                 self.create_spec_table(*spec)
+            else:
+                raise RuntimeError('table for ' + spec[0] + ' already exists')
         
         # Create statement to be sent to the cursor,
         # beginning with the name of the new table
@@ -133,9 +142,12 @@ class Navigator:
     def get_spec_count(self, part_type_name):
         stmt = "SELECT count(*) FROM information_schema.columns WHERE table_name = %s"
         args = (part_type_name,)
-        self.cursor.execute(stmt, params=args)
-        self.db.commit
-        return self.cursor.fetchone()
+        if self.exists(part_type_name):
+            self.cursor.execute(stmt, params=args)
+            self.db.commit
+            return self.cursor.fetchone()
+        else:
+            raise NameError("Part type name not found")
     
     #TODO:  Add current inventory (num. of) column to products table
     
