@@ -156,6 +156,20 @@ class Navigator:
         self.cursor.execute(f'SELECT {spec_type}_id FROM {spec_type} WHERE {spec_type}_name = \'{spec_name}\'')
         return str(self.cursor.fetchone()[0])
     
+    def add_to_products(self, product_name, part_id):
+        stmt = 'INSERT INTO products (product_name, category_id)\
+                VALUES (%s, %s)'
+        par = (product_name, part_id)
+        self.cursor.execute(stmt, params=par)
+        self.db.commit()
+    
+    def add_to_spec(self, spec, val):
+        stmt =  f'INSERT INTO {spec} ({spec}_name) '
+        stmt += 'VALUES (%s)'
+        par = (val,)
+        self.cursor.execute(stmt, params=par)
+        self.db.commit()
+    
     def add_product(self, product_name, part_type, *specs):
         if not self.exists(part_type):
             raise ValueError('Part type not found')
@@ -168,22 +182,13 @@ class Navigator:
         part_id = self.get_part_type_id(part_type)
     
         if(part_id):
-            stmt = 'INSERT INTO products (product_name, category_id)\
-                    VALUES (%s, %s)'
-            par = (product_name, part_id)
-            self.cursor.execute(stmt, params=par)
-            self.db.commit()
-            
+            self.add_to_products(product_name, part_id)
             print(product_name + ' of type ' + part_type + ' successfully added to products database')
             
             for spec in specs:
                 if len(spec) != 2:
                     raise ValueError('Illegal argument format')
-                stmt =  f'INSERT INTO {spec[0]} ({spec[0]}_name) '
-                stmt += 'VALUES (%s)'
-                par = (spec[1],)
-                self.cursor.execute(stmt, params=par)
-                self.db.commit()
+                self.add_to_spec(spec[0], spec[1])
                 print(spec[1] + ' added to ' + spec[0])
             
             stmt1 = f'INSERT INTO {part_type} ('
