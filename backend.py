@@ -156,14 +156,14 @@ class Navigator:
         self.cursor.execute(f'SELECT {spec_type}_id FROM {spec_type} WHERE {spec_type}_name = \'{spec_name}\'')
         return str(self.cursor.fetchone()[0])
     
-    def add_product(self, product_name, part_type, *args):
+    def add_product(self, product_name, part_type, *specs):
         if not self.exists(part_type):
             raise ValueError('Part type not found')
-        if self.get_spec_count(part_type) - 2 != len(args):
+        if self.get_spec_count(part_type) - 2 != len(specs):
             raise ValueError('Number of arguments does not match part type number of specs')
-        for arg in args:
-            if not self.spec_exists_in_part(part_type, arg[0]):
-                raise ValueError('Specification ' + arg[0] + ' does not exist in ' + part_type)
+        for spec in specs:
+            if not self.spec_exists_in_part(part_type, spec[0]):
+                raise ValueError('Specification ' + spec[0] + ' does not exist in ' + part_type)
         
         part_id = self.get_part_type_id(part_type)
     
@@ -176,15 +176,15 @@ class Navigator:
             
             print(product_name + ' of type ' + part_type + ' successfully added to products database')
             
-            for arg in args:
-                if len(arg) != 2:
+            for spec in specs:
+                if len(spec) != 2:
                     raise ValueError('Illegal argument format')
-                stmt =  f'INSERT INTO {arg[0]} ({arg[0]}_name) '
+                stmt =  f'INSERT INTO {spec[0]} ({spec[0]}_name) '
                 stmt += 'VALUES (%s)'
-                par = (arg[1],)
+                par = (spec[1],)
                 self.cursor.execute(stmt, params=par)
                 self.db.commit()
-                print(arg[1] + ' added to ' + arg[0])
+                print(spec[1] + ' added to ' + spec[0])
             
             stmt1 = f'INSERT INTO {part_type} ('
             stmt1 += 'product_id, '
@@ -192,10 +192,10 @@ class Navigator:
             stmt2 += self.get_product_id(product_name)
             stmt2 += ', '
             
-            for i, arg in enumerate(args):
-                stmt1 += arg[0] + '_id'
-                stmt2 += self.get_spec_id(arg[0], arg[1])
-                if i < len(args) - 1:
+            for i, spec in enumerate(specs):
+                stmt1 += spec[0] + '_id'
+                stmt2 += self.get_spec_id(spec[0], spec[1])
+                if i < len(specs) - 1:
                     stmt1 += ', '
                     stmt2 += ', '
             else:
