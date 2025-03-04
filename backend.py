@@ -139,7 +139,22 @@ class Navigator:
             return self.cursor.fetchone()[0]
         else:
             raise ValueError("Part type name not found")
+        
+    def spec_exists_in_part(self, part, spec):
+        self.cursor.execute(f'SHOW COLUMNS FROM {part} LIKE \'{spec}_id\'')
+        return self.cursor.fetchone()
     
+    def get_product_id(self, product_name):
+        self.cursor.execute(f'SELECT product_id FROM products WHERE product_name = \'{product_name}\'')
+        return str(self.cursor.fetchone()[0])
+    
+    def get_part_type_id(self, part_type):
+        self.cursor.execute(f'SELECT category_id FROM categories WHERE category_name = \'{part_type}\'')
+        return str(self.cursor.fetchone()[0])
+    
+    def get_spec_id(self, spec_type, spec_name):
+        self.cursor.execute(f'SELECT {spec_type}_id FROM {spec_type} WHERE {spec_type}_name = \'{spec_name}\'')
+        return str(self.cursor.fetchone()[0])
     
     def add_product(self, product_name, part_type, *args):
         if not self.exists(part_type):
@@ -147,12 +162,10 @@ class Navigator:
         if self.get_spec_count(part_type) - 2 != len(args):
             raise ValueError('Number of arguments does not match part type number of specs')
         for arg in args:
-            self.cursor.execute(f'SHOW COLUMNS FROM {part_type} LIKE \'{arg[0]}_id\'')
-            if not self.cursor.fetchone():
+            if not self.spec_exists_in_part(part_type, arg[0]):
                 raise ValueError('Specification ' + arg[0] + ' does not exist in ' + part_type)
         
-        self.cursor.execute(f'SELECT category_id FROM categories WHERE category_name = \'{part_type}\'')
-        part_id = self.cursor.fetchone()[0]
+        part_id = self.get_part_type_id(part_type)
     
         if(part_id):
             stmt = 'INSERT INTO products (product_name, category_id)\
@@ -160,6 +173,7 @@ class Navigator:
             par = (product_name, part_id)
             self.cursor.execute(stmt, params=par)
             self.db.commit()
+            
             print(product_name + ' of type ' + part_type + ' successfully added to products database')
             
             for arg in args:
@@ -175,14 +189,12 @@ class Navigator:
             stmt1 = f'INSERT INTO {part_type} ('
             stmt1 += 'product_id, '
             stmt2 = 'VALUES ('
-            self.cursor.execute(f'SELECT product_id FROM products WHERE product_name = \'{product_name}\'')
-            stmt2 += str(self.cursor.fetchone()[0])
+            stmt2 += self.get_product_id(product_name)
             stmt2 += ', '
             
             for i, arg in enumerate(args):
                 stmt1 += arg[0] + '_id'
-                self.cursor.execute(f'SELECT {arg[0]}_id FROM {arg[0]} WHERE {arg[0]}_name = \'{arg[1]}\'')
-                stmt2 += str(self.cursor.fetchone()[0])
+                stmt2 += self.get_spec_id(arg[0], arg[1])
                 if i < len(args) - 1:
                     stmt1 += ', '
                     stmt2 += ', '
@@ -198,16 +210,6 @@ class Navigator:
             self.db.commit()
         else:
             raise ValueError('Part type ID not found')
-        
-        
-    # Product IDs auto-increment; no need to add manually
-    # Type of product specified by Category ID number (see below)
-    # def add_product(self, name, category_id):
-    #     stmt = 'INSERT INTO products (product_name, category_id)\
-    #             VALUES (%s, %s)'
-    #     args = (name, category_id)
-    #     self.cursor.execute(stmt, params=args)
-    #     self.db.commit()
     
     #TODO:  Add current inventory (num. of) column to products table
     
