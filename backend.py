@@ -88,12 +88,12 @@ class Navigator:
         
         #Ensure part type name is formatted correctly
         if part_type == None:
-            raise ValueError("Empty argument")
+            raise ValueError('Empty argument')
         
         part_type = str.lower(part_type)
             
         if(self.exists(part_type)):
-            raise RuntimeError("Part type already exists")
+            raise RuntimeError('Part type already exists')
         
         # For each value in the specifications, create a table for normalization
         for spec in specs:
@@ -146,6 +146,10 @@ class Navigator:
             raise ValueError('Part type not found')
         if self.get_spec_count(part_type) - 2 != len(args):
             raise ValueError('Number of arguments does not match part type number of specs')
+        for arg in args:
+            self.cursor.execute(f'SHOW COLUMNS FROM {part_type} LIKE \'{arg[0]}_id\'')
+            if not self.cursor.fetchone():
+                raise ValueError('Specification ' + arg[0] + ' does not exist in ' + part_type)
         
         self.cursor.execute(f'SELECT category_id FROM categories WHERE category_name = \'{part_type}\'')
         part_id = self.cursor.fetchone()[0]
