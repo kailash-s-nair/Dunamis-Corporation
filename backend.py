@@ -130,6 +130,13 @@ class Navigator:
         self.cursor.execute(stmt, params=None)
         self.db.commit()
     
+    def get_spec_count(self, part_type_name):
+        stmt = "SELECT count(*) FROM information_schema.columns WHERE table_name = %s"
+        args = (part_type_name,)
+        self.cursor.execute(stmt, params=args)
+        self.db.commit
+        return self.cursor.fetchone()
+    
     #TODO:  Add current inventory (num. of) column to products table
     
     #Closes cursor and database upon program exit
@@ -142,9 +149,8 @@ if __name__ == '__main__':
 
     while(True):
         val = input('1. Get Products'
-                    + '\n2. Add spec table'
-                    + '\n3. Table exists'
-                    + '\n4. Create new category'
+                    + '\n2. Table exists'
+                    + '\n3. Create new category'
                     + '\nx. Exit\n')
         
         if (val == 'x'):
@@ -153,22 +159,12 @@ if __name__ == '__main__':
         if(val == '1'):
             products = navi.get_products()
             print(tabulate(products, headers=('name', 'category'))) 
-        
-        if(val == '2'):
-            val1 = input('Enter spec name (x to cancel): ')
-            if(val1 == 'x'):
-                continue
-            val2 = input('Enter value name (x to cancel): ')
-            if(val2 == 'x'):
-                continue
-            if(val1 != None and val2 != None):
-                navi.create_spec_table(val, val2)
 
-        if(val == '3'):
+        if(val == '2'):
             val = input('Enter table name: ')
             print(navi.exists(val))
 
-        if(val == '4'):
+        if(val == '3'):
             vals = list()
             val = input('Create part type name (x to cancel): ')
             
