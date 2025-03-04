@@ -139,37 +139,58 @@ class Navigator:
             return self.cursor.fetchone()[0]
         else:
             raise ValueError("Part type name not found")
-        
-    def spec_exists_in_part(self, part, spec):
-        self.cursor.execute(f'SHOW COLUMNS FROM {part} LIKE \'{spec}_id\'')
-        return self.cursor.fetchone()
     
+    #Returns an ID if element of a given name exists within the table, None otherwise
+    def name_exists_in_table(self, table_name, name_field, id_field, name):
+        self.cursor.execute(f'SELECT {id_field} FROM {table_name} WHERE {name_field} LIKE \'{name}\'')
+        temp = self.cursor.fetchone()
+        if(temp):
+            return temp[0]
+        else:
+            return None
+        
+    #Returns column name if a part type has a given spec in it, None otherwise
+    def spec_exists_in_part(self, part, spec):
+        temp = self.cursor.execute(f'SHOW COLUMNS FROM {part} LIKE \'{spec}_id\'')
+        if(temp):
+            return str(self.cursor.fetchone()[0])
+        else:
+            return None
+    
+    #Get product id from products by name
     def get_product_id(self, product_name):
         self.cursor.execute(f'SELECT product_id FROM products WHERE product_name = \'{product_name}\'')
         return str(self.cursor.fetchone()[0])
     
+    #Get part type from categories by name
     def get_part_type_id(self, part_type):
         self.cursor.execute(f'SELECT category_id FROM categories WHERE category_name = \'{part_type}\'')
         return str(self.cursor.fetchone()[0])
     
+    #Get spec value from a given spec table by name
     def get_spec_id(self, spec_type, spec_name):
         self.cursor.execute(f'SELECT {spec_type}_id FROM {spec_type} WHERE {spec_type}_name = \'{spec_name}\'')
         return str(self.cursor.fetchone()[0])
     
+    #Add value to products table if it doesn't exist
     def add_to_products(self, product_name, part_id):
-        stmt = 'INSERT INTO products (product_name, category_id)\
-                VALUES (%s, %s)'
-        par = (product_name, part_id)
-        self.cursor.execute(stmt, params=par)
-        self.db.commit()
+        if not self.name_exists_in_table('products', 'product_name', 'product_id', product_name):
+            stmt = 'INSERT INTO products (product_name, category_id)\
+                    VALUES (%s, %s)'
+            par = (product_name, part_id)
+            self.cursor.execute(stmt, params=par)
+            self.db.commit()
     
+    #Add value to given spec table if it doesn't exist
     def add_to_spec(self, spec, val):
-        stmt =  f'INSERT INTO {spec} ({spec}_name) '
-        stmt += 'VALUES (%s)'
-        par = (val,)
-        self.cursor.execute(stmt, params=par)
-        self.db.commit()
+        if not self.name_exists_in_table(spec, spec+'_name', spec+'_id', val):
+            stmt =  f'INSERT INTO {spec} ({spec}_name) '
+            stmt += 'VALUES (%s)'
+            par = (val,)
+            self.cursor.execute(stmt, params=par)
+            self.db.commit()
     
+    #Add value to a given part type table.
     def add_to_part_type(self, product_name, part_type, specs):
         stmt1 = f'INSERT INTO {part_type} ('
         stmt1 += 'product_id, '
@@ -194,6 +215,7 @@ class Navigator:
         self.cursor.execute(stmt, params=None)
         self.db.commit()
     
+    #Add product of a given type and specifications
     def add_product(self, product_name, part_type, *specs):
         if not self.exists(part_type):
             raise ValueError('Part type not found')
@@ -234,6 +256,7 @@ if __name__ == '__main__':
                     + '\n2. Table exists'
                     + '\n3. Create new category'
                     + '\n4. Add new part'
+                    + '\n5. Check if value exists in table'
                     + '\nx. Exit\n')
         
         if (val == 'x'):
@@ -310,3 +333,13 @@ if __name__ == '__main__':
             if(vals != None):
                 navi.add_product(val1, val2, *vals)
                 (f'New part type {val} successfully created')
+        if (val == '5'):
+            val1 = input('Enter table name: ')
+            val2 = input('Enter name field: ')
+            val3 = input('Enter ID field: ')
+            val4 = input('Enter name: ')
+            temp = navi.name_exists_in_table(val1,val2,val3,val4)
+            if(temp):
+                print(f'{val4} exists in table {val1} under {val3}: {temp}')
+            else:
+                print(f'{val4} does not exist in the table')
