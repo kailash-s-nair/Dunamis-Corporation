@@ -170,6 +170,30 @@ class Navigator:
         self.cursor.execute(stmt, params=par)
         self.db.commit()
     
+    def add_to_part_type(self, product_name, part_type, specs):
+        stmt1 = f'INSERT INTO {part_type} ('
+        stmt1 += 'product_id, '
+        stmt2 = 'VALUES ('
+        stmt2 += self.get_product_id(product_name)
+        stmt2 += ', '
+            
+        for i, spec in enumerate(specs):
+                stmt1 += spec[0] + '_id'
+                stmt2 += self.get_spec_id(spec[0], spec[1])
+                if i < len(specs) - 1:
+                    stmt1 += ', '
+                    stmt2 += ', '
+        else:
+            stmt1 += ') '
+            stmt2 += ')'
+        
+        stmt = stmt1 + stmt2
+            
+        print(stmt)
+            
+        self.cursor.execute(stmt, params=None)
+        self.db.commit()
+    
     def add_product(self, product_name, part_type, *specs):
         if not self.exists(part_type):
             raise ValueError('Part type not found')
@@ -191,28 +215,7 @@ class Navigator:
                 self.add_to_spec(spec[0], spec[1])
                 print(spec[1] + ' added to ' + spec[0])
             
-            stmt1 = f'INSERT INTO {part_type} ('
-            stmt1 += 'product_id, '
-            stmt2 = 'VALUES ('
-            stmt2 += self.get_product_id(product_name)
-            stmt2 += ', '
-            
-            for i, spec in enumerate(specs):
-                stmt1 += spec[0] + '_id'
-                stmt2 += self.get_spec_id(spec[0], spec[1])
-                if i < len(specs) - 1:
-                    stmt1 += ', '
-                    stmt2 += ', '
-            else:
-                stmt1 += ') '
-                stmt2 += ')'
-                
-            stmt = stmt1 + stmt2
-            
-            print(stmt)
-            
-            self.cursor.execute(stmt, params=None)
-            self.db.commit()
+            self.add_to_part_type(product_name, part_type, specs)
         else:
             raise ValueError('Part type ID not found')
     
