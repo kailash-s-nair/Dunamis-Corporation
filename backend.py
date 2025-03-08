@@ -1,6 +1,5 @@
 import mysql.connector
 import json
-import socket
 from tabulate import tabulate
 
 class Navigator:
@@ -9,13 +8,11 @@ class Navigator:
         with open('very secure credentials folder/credentials.json', 'r') as file:
             cred = json.load(file)
         
-        ip = input("Enter current IP address: ") #School: 10.160.5.178
-        
         self.db = mysql.connector.connect(
             user=cred.get('user'),
             password = cred.get('password'),
             database = 'items_database',
-            host = ip #Server (i.e. Clover's laptop) has to be on
+            host = 'dynama.ddns.net' #Server (i.e. Clover's laptop) has to be on
         )
         
         self.cursor = self.db.cursor()
