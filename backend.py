@@ -9,13 +9,13 @@ class Navigator:
         with open('very secure credentials folder/credentials.json', 'r') as file:
             cred = json.load(file)
         
-        hostname = socket.gethostname()
+        ip = input("Enter current IP address: ") #School: 10.160.5.178
         
         self.db = mysql.connector.connect(
             user=cred.get('user'),
             password = cred.get('password'),
             database = 'items_database',
-            host = socket.gethostbyname(hostname) #Server (i.e. Clover's laptop) has to be on
+            host = ip #Server (i.e. Clover's laptop) has to be on
         )
         
         self.cursor = self.db.cursor()
@@ -47,7 +47,6 @@ class Navigator:
     #Create basic tables if they don't exist
     def create_tables(self):
         if not self.exists('products'):
-
             stmt = 'CREATE TABLE products(\
                     product_id INT NOT NULL AUTO_INCREMENT,\
                     product_name VARCHAR(20) NOT NULL,\
@@ -241,6 +240,9 @@ class Navigator:
             self.add_to_part_type(product_name, part_type, specs)
         else:
             raise ValueError('Part type ID not found')
+    
+    # def edit_product(self, product_name, *spec_value_pairs):
+        
     
     def clear_table(self, table_name):
         if(self.exists(table_name)):
