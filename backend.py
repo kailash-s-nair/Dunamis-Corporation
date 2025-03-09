@@ -1,6 +1,5 @@
 import mysql.connector
 import json
-import socket
 from tabulate import tabulate
 
 class Navigator:
@@ -9,13 +8,11 @@ class Navigator:
         with open('very secure credentials folder/credentials.json', 'r') as file:
             cred = json.load(file)
         
-        hostname = socket.gethostname()
-        
         self.db = mysql.connector.connect(
             user=cred.get('user'),
             password = cred.get('password'),
             database = 'items_database',
-            host = socket.gethostbyname(hostname) #Server (i.e. Clover's laptop) has to be on
+            host = 'dynama.ddns.net' #Server (i.e. Clover's laptop) has to be on
         )
         
         self.cursor = self.db.cursor()
@@ -47,7 +44,6 @@ class Navigator:
     #Create basic tables if they don't exist
     def create_tables(self):
         if not self.exists('products'):
-
             stmt = 'CREATE TABLE products(\
                     product_id INT NOT NULL AUTO_INCREMENT,\
                     product_name VARCHAR(20) NOT NULL,\
@@ -241,6 +237,15 @@ class Navigator:
             self.add_to_part_type(product_name, part_type, specs)
         else:
             raise ValueError('Part type ID not found')
+    
+    def edit_product(self, product_name, part_type, *spec_value_pairs):
+        product_id = self.get_product_id(product_name)
+        if(product_id and self.name_exists_in_table(part_type, 'product_id', f'{part_type}_id'), product_id):
+            for pair in spec_value_pairs:
+                if(self.spec_exists_in_part(pair[0])):
+                    stmt = f'UPDATE {part_type} SET {pair[0]} = {pair[1]} WHERE product_id = {product_id}'
+                else:
+                    raise ValueError('Spec does not exist in part')
     
     def clear_table(self, table_name):
         if(self.exists(table_name)):
