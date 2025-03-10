@@ -7,40 +7,63 @@ def add_item():
     price = simpledialog.askstring("Input", "Enter Price:")
 
     if manufacturer and model and price:
-        listbox.insert(tk.END, f"{manufacturer:<15}| {model:<15}| ${price:<10}")
-        listbox.insert(tk.END, "-" * 46)  # Row separator
+        listbox.insert(tk.END, f"Manufacturer: {manufacturer}")
+        listbox.insert(tk.END, f"Model: {model}")
+        listbox.insert(tk.END, f"Price: ${price}")
+        listbox.insert(tk.END, "-" * 30)  # Separator
 
 def delete_item():
     selected = listbox.curselection()
-    if selected and (selected[0] % 2 == 1):  # Ensure selecting a valid row
-        index = selected[0] - 1  # Adjust to target actual row
-        listbox.delete(index)  # Remove item row
-        listbox.delete(index)  # Remove separator
+    if not selected:
+        return  # No selection made
+
+    index = selected[0]
+
+    # Ensure we don't delete headers or separators
+    if index <= 1 or "-" in listbox.get(index):
+        return
+
+    # Get the start of the entry
+    entry_start = index - (index % 4)
+
+    for _ in range(4):  # Remove the full entry
+        listbox.delete(entry_start)
 
 def edit_item():
     selected = listbox.curselection()
-    if selected and (selected[0] % 2 == 1):  # Ensure selecting an item row
-        index = selected[0] - 1  # Adjust to target actual row
-        row_data = listbox.get(index).split("|")
+    if not selected:
+        return  # No selection made
 
-        if len(row_data) == 3:  # Ensure correct format
-            manufacturer = row_data[0].strip()
-            model = row_data[1].strip()
-            price = row_data[2].strip().replace("$", "")
+    index = selected[0]
 
-            new_manufacturer = simpledialog.askstring("Edit Item", "Modify Manufacturer:", initialvalue=manufacturer)
-            new_model = simpledialog.askstring("Edit Item", "Modify Model:", initialvalue=model)
-            new_price = simpledialog.askstring("Edit Item", "Modify Price:", initialvalue=price)
+    # Ensure it's not the header or separator
+    if index <= 1 or "-" in listbox.get(index):
+        return  
 
-            if new_manufacturer and new_model and new_price:
-                listbox.delete(index, index + 1)  # Remove old row and separator
-                listbox.insert(index, f"{new_manufacturer:<15}| {new_model:<15}| ${new_price:<10}")
-                listbox.insert(index + 1, "-" * 46)
+    selected_text = listbox.get(index)
+
+    if "Manufacturer:" in selected_text:
+        new_value = simpledialog.askstring("Edit Manufacturer", "Modify Manufacturer:", initialvalue=selected_text.replace("Manufacturer: ", "").strip())
+        if new_value:
+            listbox.delete(index)  # Remove old value
+            listbox.insert(index, f"Manufacturer: {new_value}")  # Insert at same index
+
+    elif "Model:" in selected_text:
+        new_value = simpledialog.askstring("Edit Model", "Modify Model:", initialvalue=selected_text.replace("Model: ", "").strip())
+        if new_value:
+            listbox.delete(index)
+            listbox.insert(index, f"Model: {new_value}")
+
+    elif "Price:" in selected_text:
+        new_value = simpledialog.askstring("Edit Price", "Modify Price:", initialvalue=selected_text.replace("Price: $", "").strip())
+        if new_value:
+            listbox.delete(index)
+            listbox.insert(index, f"Price: ${new_value}")
 
 # Create main window
 root = tk.Tk()
 root.title("Item Manager")
-root.geometry("420x300")
+root.geometry("300x400")
 
 # Create Frame for Listbox and Scrollbar
 frame = tk.Frame(root)
@@ -48,15 +71,15 @@ frame.pack(pady=10, fill=tk.BOTH, expand=True)
 
 # Create Listbox with Scrollbar
 scrollbar = tk.Scrollbar(frame)
-listbox = tk.Listbox(frame, yscrollcommand=scrollbar.set, font=("Courier", 10))
+listbox = tk.Listbox(frame, yscrollcommand=scrollbar.set, font=("Arial", 10))
 scrollbar.config(command=listbox.yview)
 
 listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
 # Add Header Row
-listbox.insert(tk.END, f"{'Manufacturer':<15}| {'Model':<15}| {'Price':<10}")
-listbox.insert(tk.END, "=" * 46)  # Header separator
+listbox.insert(tk.END, "   ITEM LIST   ")
+listbox.insert(tk.END, "=" * 30)  # Header separator
 
 # Create Buttons
 add_button = tk.Button(root, text="Add Item", command=add_item)
