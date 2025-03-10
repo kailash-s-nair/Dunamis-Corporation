@@ -74,11 +74,8 @@ class Navigator:
     # 1. GPU
     def add_part_type(self, part_type, *specs):
         # First create the part type
-        stmt = 'INSERT INTO categories (category_name)\
-                VALUES (%s)'
-        args = (part_type,)
-        self.cursor.execute(stmt, params=args)
-        self.db.commit()
+        stmt1 =  f'INSERT INTO categories (category_name) '
+        stmt1 += f'VALUES (\'{part_type}\')'
         
         print(part_type + ' inserted into categories')
         
@@ -92,38 +89,27 @@ class Navigator:
             raise RuntimeError('Part type already exists')
         
         # For each value in the specifications, create a table for normalization
-        for spec in specs:
+        stmt2 =  f'ALTER TABLE products '
+        for i, spec in enumerate(specs):
             if(not self.exists(spec)):
-                self.create_spec_table(spec)
-                print('table ' + spec + ' created')
+                self.create_spec_table(spec)  #Create table for spec
+                stmt2 += f'ADD {spec}_id INT' #Add spec to main table
+                if(i < len(specs)-1):
+                    stmt2 += ', '
             else:
                 raise RuntimeError('table for ' + spec + ' already exists')
-        
-        # Create statement to be sent to the cursor,
-        # beginning with the name of the new table
-        stmt = f'CREATE TABLE {part_type} ('
-        stmt += f'{str.lower(part_type)}_id INT NOT NULL AUTO_INCREMENT, '
-        stmt += 'product_id INT NOT NULL, '
-        
-        # Add attribute variable name columns
-        for spec in specs:
-            stmt += f'{spec}_id INT NOT NULL'
-            stmt += ', '
-        
-        # Link each table to the tables that were just created
-        stmt += f'PRIMARY KEY ({part_type}_id), '
-        stmt += f'FOREIGN KEY (product_id) REFERENCES products(product_id), '
-        
+        stmt3 = f'ALTER TABLE products '
         for i, spec in enumerate(specs):
-            stmt += f'FOREIGN KEY ({spec}_id) REFERENCES {spec}({spec}_id)'
-            if i < len(specs)-1:
-                stmt += ', '
-        else:
-            stmt += ')'
-            
-        self.cursor.execute(stmt, params=None)
+            stmt3 += f'ADD FOREIGN KEY ({spec}_id) REFERENCES {spec}({spec}_id)'
+            if(i < len(specs)-1):
+                stmt3 += ', '
+        
+        self.cursor.execute(stmt1)
+        self.cursor.execute(stmt2)
+        self.cursor.execute(stmt3)
         self.db.commit()
-        print(part_type + ' table successfully created')
+        
+        print(part_type + ' specs added to main table')
     
     #Get the number of spec arguments for a given part type
     def get_spec_count(self, part_type):
