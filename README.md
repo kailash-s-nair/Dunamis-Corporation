@@ -15,7 +15,8 @@ The program is entirely mouse controlled.
 
 # Additional Info
 
-The Frontend folder contains the user login and admin privileges.\\
+The Frontend folder contains the user login and admin privileges.
+
 The Backend folder contains user information and database connections, as well as testing files. You can run the test using pytest in the terminal/command line.
 
 
