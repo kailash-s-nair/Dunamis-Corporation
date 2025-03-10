@@ -1,101 +1,71 @@
-import csv
+import tkinter as tk
+from tkinter import simpledialog
 
-# Read catalog from file
-def read_catalog(file_name):
-    catalog = []
-    try:
-        with open(file_name, mode='r') as file:
-            reader = csv.DictReader(file)
-            for row in reader:
-                catalog.append(row)
-    except FileNotFoundError:
-        print(f"{file_name} not found. Starting with an empty catalog.")
-    return catalog
+def add_item():
+    manufacturer = simpledialog.askstring("Input", "Enter Manufacturer:")
+    model = simpledialog.askstring("Input", "Enter Model:")
+    price = simpledialog.askstring("Input", "Enter Price:")
 
-# Write catalog to file
-def write_catalog(file_name, catalog):
-    with open(file_name, mode='w', newline='') as file:
-        fieldnames = catalog[0].keys() if catalog else ["sepal_length", "sepal_width", "petal_length", "petal_width", "species"]
-        writer = csv.DictWriter(file, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(catalog)
+    if manufacturer and model and price:
+        listbox.insert(tk.END, f"{manufacturer:<15}| {model:<15}| ${price:<10}")
+        listbox.insert(tk.END, "-" * 46)  # Row separator
 
-# Display the menu
-def menu():
-    print("\nMenu")
-    print("1. Add items")
-    print("2. Delete items")
-    print("3. Edit/Modify items")
-    print("4. View dataset")
-    print("5. Exit")
-    choice = input("Select from one of the options: ")
-    return choice
+def delete_item():
+    selected = listbox.curselection()
+    if selected and (selected[0] % 2 == 1):  # Ensure selecting a valid row
+        index = selected[0] - 1  # Adjust to target actual row
+        listbox.delete(index)  # Remove item row
+        listbox.delete(index)  # Remove separator
 
-# Add an item
-def add_item(catalog):
-    new_length = input("sepal_length: ")
-    new_width = input("sepal_width: ")
-    description_length = input("petal_length: ")
-    description_width = input("petal_width: ")
-    species_add = input("species: ")
-    catalog.append({"sepal_length": new_length, "sepal_width": new_width, "petal_length": description_length, "petal_width": description_width, "species": species_add})
-    print("Item added successfully.")
+def edit_item():
+    selected = listbox.curselection()
+    if selected and (selected[0] % 2 == 1):  # Ensure selecting an item row
+        index = selected[0] - 1  # Adjust to target actual row
+        row_data = listbox.get(index).split("|")
 
-# Delete an item by species
-def delete_item(catalog):
-    delete_species = input("Enter the species name to delete: ")
-    for item in catalog:
-        if item["species"].lower() == delete_species.lower():
-            catalog.remove(item)
-            print(f"Species '{delete_species}' deleted successfully.")
-            return
-    print(f"Species '{delete_species}' not found.")
+        if len(row_data) == 3:  # Ensure correct format
+            manufacturer = row_data[0].strip()
+            model = row_data[1].strip()
+            price = row_data[2].strip().replace("$", "")
 
-# Edit an item by species
-def edit_item(catalog):
-    species_edit = input("Enter the species name to edit: ")
-    for item in catalog:
-        if item["species"].lower() == species_edit.lower():
-            print("Leave blank to keep existing values.")
-            item["sepal_length"] = input(f"New sepal_length ({item['sepal_length']}): ") or item["sepal_length"]
-            item["sepal_width"] = input(f"New sepal_width ({item['sepal_width']}): ") or item["sepal_width"]
-            item["petal_length"] = input(f"New petal_length ({item['petal_length']}): ") or item["petal_length"]
-            item["petal_width"] = input(f"New petal_width ({item['petal_width']}): ") or item["petal_width"]
-            print(f"Species '{species_edit}' updated successfully.")
-            return
-    print(f"Species '{species_edit}' not found.")
+            new_manufacturer = simpledialog.askstring("Edit Item", "Modify Manufacturer:", initialvalue=manufacturer)
+            new_model = simpledialog.askstring("Edit Item", "Modify Model:", initialvalue=model)
+            new_price = simpledialog.askstring("Edit Item", "Modify Price:", initialvalue=price)
 
-# View catalog
-def view_catalog(catalog):
-    if not catalog:
-        print("Catalog is empty.")
-    else:
-        print("\nCatalog Items:")
-        for item in catalog:
-            print(", ".join(f"{key}: {value}" for key, value in item.items()))
+            if new_manufacturer and new_model and new_price:
+                listbox.delete(index, index + 1)  # Remove old row and separator
+                listbox.insert(index, f"{new_manufacturer:<15}| {new_model:<15}| ${new_price:<10}")
+                listbox.insert(index + 1, "-" * 46)
 
-# Main function
-def main():
-    file_name = "iris.csv"  # Make sure to use the correct file name here
-    catalog = read_catalog(file_name)
+# Create main window
+root = tk.Tk()
+root.title("Item Manager")
+root.geometry("420x300")
 
-    while True:
-        choice = menu()
-        if choice == '1':
-            add_item(catalog)
-        elif choice == '2':
-            delete_item(catalog)
-        elif choice == '3':
-            edit_item(catalog)
-        elif choice == '4':
-            view_catalog(catalog)
-        elif choice == '5':
-            write_catalog(file_name, catalog)
-            print("Changes saved. Exiting the catalog system. Goodbye!")
-            break
-        else:
-            print("Invalid option. Please try again.")
+# Create Frame for Listbox and Scrollbar
+frame = tk.Frame(root)
+frame.pack(pady=10, fill=tk.BOTH, expand=True)
 
-# Run the program
-if __name__ == "__main__":
-    main()
+# Create Listbox with Scrollbar
+scrollbar = tk.Scrollbar(frame)
+listbox = tk.Listbox(frame, yscrollcommand=scrollbar.set, font=("Courier", 10))
+scrollbar.config(command=listbox.yview)
+
+listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+# Add Header Row
+listbox.insert(tk.END, f"{'Manufacturer':<15}| {'Model':<15}| {'Price':<10}")
+listbox.insert(tk.END, "=" * 46)  # Header separator
+
+# Create Buttons
+add_button = tk.Button(root, text="Add Item", command=add_item)
+delete_button = tk.Button(root, text="Delete Item", command=delete_item)
+edit_button = tk.Button(root, text="Edit Item", command=edit_item)
+
+add_button.pack(pady=5)
+delete_button.pack(pady=5)
+edit_button.pack(pady=5)
+
+# Run the GUI loop
+root.mainloop()
