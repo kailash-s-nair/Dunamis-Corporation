@@ -9,7 +9,6 @@ You must make sure that app.py is in the Backend folder, and dashboard.html, ind
 
 Run frontendgui.py. You can run it from a terminal/command line using **python frontendgui.py**, or open the file in your desired code editor and run from there.
 
-You should see this:
 ![image](https://github.com/user-attachments/assets/de1ca0f9-4767-4999-b86f-8f81fdb86164)
 
 The program is entirely mouse controlled.
