@@ -15,7 +15,7 @@ class Navigator:
             host = 'dynama.ddns.net' #Server (i.e. Clover's laptop) has to be on
         )
         
-        self.cursor = self.db.cursor()
+        self.cursor = self.db.cursor(buffered=True)
 
     #Returns true or false if table exists or not
     def exists(self, name):
@@ -32,10 +32,11 @@ class Navigator:
     #When displaying data, JOIN on [category]_id, SELECT [spec].spec_name, or similar
     def create_spec_table(self, spec_name):
         if(not self.exists(spec_name)): #String literal must be used here
-            stmt = f'CREATE TABLE {spec_name}(\
-                    {spec_name}_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,\
-                    {spec_name}_name VARCHAR(20))'
-
+            stmt =  f'CREATE TABLE {spec_name} ('
+            stmt += f'{spec_name}_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, '
+            stmt += f'{spec_name}_name VARCHAR(20))'
+            
+            print(stmt)
             self.cursor.execute(stmt, params=None)
             self.db.commit()
         else:
@@ -74,8 +75,8 @@ class Navigator:
     # 1. GPU
     def add_part_type(self, part_type, *specs):
         # First create the part type
-        stmt1 =  f'INSERT INTO categories (category_name) '
-        stmt1 += f'VALUES (\'{part_type}\')'
+        stmt1 =  f'INSERT INTO categories (category_name, spec_count) '
+        stmt1 += f'VALUES (\'{part_type}\', {len(specs)})'
         
         print(part_type + ' inserted into categories')
         
@@ -86,7 +87,7 @@ class Navigator:
         part_type = str.lower(part_type)
             
         if(self.exists(part_type)):
-            raise RuntimeError('Part type already exists')
+            print(f'Part type {part_type} already exists')
         
         # For each value in the specifications, create a table for normalization
         stmt2 =  f'ALTER TABLE products '
@@ -104,9 +105,22 @@ class Navigator:
             if(i < len(specs)-1):
                 stmt3 += ', '
         
+        stmt4 = 'ALTER TABLE display_products '
+        for i, spec in enumerate(specs):
+            stmt4 += f'ADD {spec} VARCHAR(20)'
+            if(i < len(specs)-1):
+                stmt4 += ', '
+        
+        print(stmt1)
+        print(stmt2)
+        print(stmt3)
+        print(stmt4)
+        
         self.cursor.execute(stmt1)
         self.cursor.execute(stmt2)
         self.cursor.execute(stmt3)
+        self.cursor.execute(stmt4)
+        
         self.db.commit()
         
         print(part_type + ' specs added to main table')
@@ -124,9 +138,12 @@ class Navigator:
     
     #Returns an ID if element of a given name exists within the table, None otherwise
     def name_exists_in_table(self, table_name, name_field, id_field, name):
-        self.cursor.execute(f'SELECT {id_field} FROM {table_name} WHERE {name_field} LIKE \'{name}\'')
+        stmt = f'SELECT {id_field} FROM {table_name} WHERE {name_field} LIKE \'{name}\''
+        print(stmt)
+        self.cursor.execute(stmt)
         temp = self.cursor.fetchone()
-        if(temp):
+        print(temp)
+        if temp:
             return temp[0]
         else:
             return None
@@ -134,9 +151,9 @@ class Navigator:
     #Returns column name if a part type has a given spec in it, None otherwise
     def spec_exists_in_part(self, part, spec):
         self.cursor.execute(f'SHOW COLUMNS FROM {part} LIKE \'{spec}_id\'')
-        temp = self.cursor.fetchone()[0]
-        if(temp):
-            return str(temp)
+        temp = self.cursor.fetchone()
+        if temp:
+            return str(temp[0])
         else:
             return None
     
@@ -155,77 +172,70 @@ class Navigator:
         self.cursor.execute(f'SELECT {spec_type}_id FROM {spec_type} WHERE {spec_type}_name = \'{spec_name}\'')
         return str(self.cursor.fetchone()[0])
     
+    def get_product_name(self, product_id):
+        self.cursor.execute(f'SELECT product_name FROM products WHERE product_id = {product_id}')
+        return str(self.cursor.fetchone()[0])
+    
+    def get_part_type_name(self, part_type_id):
+        self.cursor.execute(f'SELECT category_name FROM categories WHERE category_id = {part_type_id}')
+        return str(self.cursor.fetchone()[0])
+    
+    def get_spec_name(self, spec_type, spec_id):
+        self.cursor.execute(f'SELECT {spec_type}_name FROM {spec_type} WHERE {spec_type}_id = \'{spec_id}\'')
+        return str(self.cursor.fetchone()[0])
+    
     #Add value to products table if it doesn't exist
-    def add_to_products(self, product_name, part_id):
+    def add_to_products(self, product_name, part_id, price, *spec_pairs):
         if not self.name_exists_in_table('products', 'product_name', 'product_id', product_name):
-            stmt = 'INSERT INTO products (product_name, category_id)\
-                    VALUES (%s, %s)'
-            par = (product_name, part_id)
-            self.cursor.execute(stmt, params=par)
+            stmt1 = 'INSERT INTO products (product_name, category_id, stock, price, '
+            for i, spec_pair in enumerate(spec_pairs):
+                stmt1 += f'{spec_pair[0]}_id'
+                if(i < len(spec_pairs)-1):
+                    stmt1 += ', '
+            else:
+                stmt1 += ') '
+            stmt1 += f'VALUES (\'{product_name}\', {part_id}, 0, {price}, '
+            for i, spec_pair in enumerate(spec_pairs):
+                stmt1 += f'\'{self.get_spec_id(spec_pair[0], spec_pair[1])}\''
+                if(i < len(spec_pairs) - 1):
+                    stmt1 += ', '
+            else:
+                stmt1 += ')'
+            print(stmt1)
+            
+            stmt2 = 'INSERT INTO display_products (product_name, product_type, stock, price, '
+            for i, spec_pair in enumerate(spec_pairs):
+                stmt2 += f'{spec_pair[0]}'
+                if(i < len(spec_pairs)-1):
+                    stmt2 += ', '
+            else:
+                stmt2 += ') '
+            stmt2 += f'VALUES (\'{product_name}\', \'{self.get_part_type_name(part_id)}\', 0, {price}, '
+            for i, spec_pair in enumerate(spec_pairs):
+                stmt2 += f'\'{spec_pair[1]}\''
+                if(i < len(spec_pairs) - 1):
+                    stmt2 += ', '
+            else:
+                stmt2 += ')'
+            print(stmt1)
+            print(stmt2)
+            self.cursor.execute(stmt1)
+            self.cursor.execute(stmt2)
             self.db.commit()
     
     #Add value to given spec table if it doesn't exist
     def add_to_spec(self, spec, val):
         if not self.name_exists_in_table(spec, spec+'_name', spec+'_id', val):
             stmt =  f'INSERT INTO {spec} ({spec}_name) '
-            stmt += 'VALUES (%s)'
-            par = (val,)
-            self.cursor.execute(stmt, params=par)
+            stmt += f'VALUES (\'{val}\')'
+            self.cursor.execute(stmt)
             self.db.commit()
     
-    #Add value to a given part type table.
-    def add_to_part_type(self, product_name, part_type, specs):
-        stmt1 = f'INSERT INTO {part_type} ('
-        stmt1 += 'product_id, '
-        stmt2 = 'VALUES ('
-        stmt2 += self.get_product_id(product_name)
-        stmt2 += ', '
-            
-        for i, spec in enumerate(specs):
-                stmt1 += spec[0] + '_id'
-                stmt2 += self.get_spec_id(spec[0], spec[1])
-                if i < len(specs) - 1:
-                    stmt1 += ', '
-                    stmt2 += ', '
-        else:
-            stmt1 += ') '
-            stmt2 += ')'
-        
-        stmt = stmt1 + stmt2
-            
-        print(stmt)
-            
-        self.cursor.execute(stmt, params=None)
-        self.db.commit()
-    
     #Add product of a given type and specifications
-    def add_product(self, product_name, part_type, *specs):
-        if not self.exists(part_type):
-            raise ValueError('Part type not found')
-        if self.get_spec_count(part_type) - 2 != len(specs):
-            raise ValueError('Number of arguments does not match part type number of specs')
-        for spec in specs:
-            if not self.spec_exists_in_part(part_type, spec[0]):
-                raise ValueError('Specification ' + spec[0] + ' does not exist in ' + part_type)
-        
-        part_id = self.get_part_type_id(part_type)
-    
-        if(part_id):
-            self.add_to_products(product_name, part_id)
-            print(product_name + ' of type ' + part_type + ' successfully added to products database')
-            
-            for spec in specs:
-                if len(spec) != 2:
-                    raise ValueError('Illegal argument format')
-                self.add_to_spec(spec[0], spec[1])
-                print(spec[1] + ' added to ' + spec[0])
-            
-            self.add_to_part_type(product_name, part_type, specs)
-        else:
-            raise ValueError('Part type ID not found')
-    
-    # def edit_product(self, product_name, *spec_value_pairs):
-        
+    def add_product(self, product_name, part_type, price, *spec_pairs):
+        for spec_pair in spec_pairs:
+            self.add_to_spec(*spec_pair)
+        self.add_to_products(product_name, self.get_part_type_id(part_type), price, *spec_pairs)
     
     def clear_table(self, table_name):
         if(self.exists(table_name)):
@@ -302,6 +312,8 @@ if __name__ == '__main__':
             if(val1 == 'x'):
                 continue
             
+            val3 = input('Enter price: ')
+            
             while(True):
                 temp1 = input('Add spec (x to cancel, o to submit): ')
                 if(temp1 == 'x'):
@@ -323,7 +335,7 @@ if __name__ == '__main__':
                 continue
             
             if(vals != None):
-                navi.add_product(val1, val2, *vals)
+                navi.add_product(val1, val2, val3, *vals)
                 (f'New part type {val} successfully created')
         if (val == '5'):
             val1 = input('Enter table name: ')
