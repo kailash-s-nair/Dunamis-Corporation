@@ -1,6 +1,13 @@
+import re
 import mysql.connector
 import json
 from tabulate import tabulate
+
+def contains_illegal(str):
+    if re.search(r'[,\\,\\.\\/\\;]', str):
+        return True
+    else:
+        return False
 
 class Navigator:
     #Loads credentials, accesses database, creates cursor to database
@@ -28,15 +35,15 @@ class Navigator:
         else:
             return False
         
-    def execute(*stmts):
+    def execute(self, *stmts):
         for stmt in stmts:
+            print(stmt)
             self.cursor.execute(stmt)
-
-    #Create auto-incrementing table for computer part spec
-    #When displaying data, JOIN on [category]_id, SELECT [spec].spec_name, or similar
+    
     def create_spec_table(self, spec_name):
-        if(not self.exists(spec_name)): #String literal must be used here
-            stmt =  f'CREATE TABLE {spec_name} ('
+        if(not self.exists(spec_name)): 
+            
+            stmt =  f'CREATE TABLE {spec_name} (' #String literal must be used here
             stmt += f'{spec_name}_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, '
             stmt += f'{spec_name}_name VARCHAR(20))'
             
@@ -52,8 +59,8 @@ class Navigator:
             stmt = 'CREATE TABLE products(\
                     product_id INT NOT NULL AUTO_INCREMENT,\
                     product_name VARCHAR(20) NOT NULL,\
-                    stock INT, \
-                    price INT, \
+                    stock INT NOT NULL, \
+                    price INT NOT NULL, \
                     category_id INT NOT NULL,\
                     PRIMARY KEY (product_id))'
             
@@ -63,7 +70,17 @@ class Navigator:
             stmt = 'CREATE TABLE categories(\
                     category_id INT NOT NULL AUTO_INCREMENT,\
                     category_name VARCHAR(20) NOT NULL,\
-                    PRIMARY KEY (product_id))'
+                    spec_count INT NOT NULL,\
+                    PRIMARY KEY (category_id))'
+            
+            self.cursor.execute(stmt, params=None)
+        
+        if not self.exists('display_products'):
+            stmt = 'CREATE TABLE display_products(\
+                    product_name VARCHAR(20) NOT NULL,\
+                    stock INT NOT NULL, \
+                    price INT NOT NULL, \
+                    category INT NOT NULL)'
             
             self.cursor.execute(stmt, params=None)
 
@@ -75,6 +92,25 @@ class Navigator:
         self.cursor.execute(stmt, params=None)
         return self.cursor.fetchall()
     
+    #Create auto-incrementing table for computer part spec
+    #When displaying data, JOIN on [category]_id, SELECT [spec].spec_name, or similar
+    def create_spec_table(self, spec_val, type_num):
+        if(contains_illegal(spec_val)):
+            raise ValueError('Illegal character(s) used in variable name')
+        if(not self.exists(spec_val)): #String literal must be used here
+            if(type_num == 1):
+                type = 'VARCHAR(20)'
+            if(type_num == 2):
+                type = 'INT'
+            stmt =  f'CREATE TABLE {spec_val} ('
+            stmt += f'{spec_val}_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, '
+            stmt += f'{spec_val}_val {type})'
+
+            self.cursor.execute(stmt, params=None)
+            self.db.commit()
+        else:
+            raise RuntimeError('Table ' + spec_val + ' already exists')
+    
     # Create a new part type with specifications;
     # Each specification is a tuple containing spec name (spec) and spec variable name (var),
     # used in calling create_spec_table(*(spec, var)).
@@ -83,12 +119,18 @@ class Navigator:
         # First create the part type
         stmt1 =  f'INSERT INTO categories (category_name, spec_count) '
         stmt1 += f'VALUES (\'{part_type}\', {len(specs)})'
+        
+        spec_names = []
 
-        specs = list(specs)
+        for spec in specs:
+            spec_names.append(spec[0])
 
-        for i in range(len(specs)):
-            specs[i] = specs[i].replace(' ', '_')
-            specs[i] = specs[i].lower()
+        for i in range(len(spec_names)):
+            if(contains_illegal(spec_names[i])):
+                raise ValueError('Illegal character(s) used in spec name')
+            
+            spec_names[i] = spec_names[i].replace(' ', '_')
+            spec_names[i] = spec_names[i].lower()
         
         #Ensure part type name is formatted correctly
         if part_type == None:
@@ -103,24 +145,24 @@ class Navigator:
         # For each value in the specifications, create a table for normalization and add column to products
         stmt2 =  f'ALTER TABLE products '
         for i, spec in enumerate(specs):
-            if(not self.exists(spec)):
-                stmt2 += f'ADD {spec}_id INT' #Add spec to main table
+            if(not self.exists(spec_names[i])):
+                stmt2 += f'ADD {spec_names[i]}_id INT' #Add spec to main table
                 if(i < len(specs)-1):
                     stmt2 += ', '
             else:
-                raise RuntimeError('table for ' + spec + ' already exists')
+                raise RuntimeError('table for ' + spec_names[i] + ' already exists')
         
         #For each new column, add foreign key
         stmt3 = f'ALTER TABLE products '
         for i, spec in enumerate(specs):
-            stmt3 += f'ADD FOREIGN KEY ({spec}_id) REFERENCES {spec}({spec}_id)'
+            stmt3 += f'ADD FOREIGN KEY ({spec_names[i]}_id) REFERENCES {spec_names[i]}({spec_names[i]}_id)'
             if(i < len(specs)-1):
                 stmt3 += ', '
         
         #Alter display table
         stmt4 = 'ALTER TABLE display_products '
         for i, spec in enumerate(specs):
-            stmt4 += f'ADD {spec} VARCHAR(20)'
+            stmt4 += f'ADD {spec_names[i]} VARCHAR(20)'
             if(i < len(specs)-1):
                 stmt4 += ', '
         
@@ -130,21 +172,16 @@ class Navigator:
         stmt5 += 'UNIQUE (specs_in_type)'
         stmt5 += ')'
 
-        #Insert parts into table
-        stmt6 = f'INSERT INTO {part_type}_specs '
-        stmt6 += 'VALUES ('
+        stmt6 = ''
 
         for i, spec in enumerate(specs):
-            stmt6 += f'{spec} VARCHAR(20) NOT NULL'
+            stmt6 += f'INSERT INTO {part_type}_specs (specs_in_type) '
+            stmt6 += f'VALUES (\'{spec_names[i]}\')'
             if(i < len(specs)-1):
-                stmt6 += ', '
-        stmt6 += ')'
+                stmt6 += '; '
         
-        # print(stmt1,stmt2,stmt3,stmt4,stmt5,stmt6, sep='\n\n')
-
-        for spec in specs:
-          spec = spec.replace(' ', '_')
-          self.create_spec_table(spec) #Create spec tables
+        for i in range(len(specs)):
+            self.create_spec_table(spec_names[i], specs[i][1]) #Create spec tables
         print('Spec tables created')
         
         self.execute(stmt1, stmt2, stmt3, stmt4, stmt5, stmt6)
@@ -236,8 +273,10 @@ class Navigator:
     
     #Add value to products table if it doesn't exist
     def add_to_products(self, product_name, part_id, price, *spec_pairs):
-        if(not self.name_exists_in_table('products', 'product_name', 'product_id', product_name)
-            and self.exists(self.get_part_type_id(part_id))):
+        if(not self.name_exists_in_table('products', 'product_name', 'product_id', product_name)):
+            if(not self.exists(self.get_part_type_id(part_id))):
+                raise ValueError('Part type not found')
+
             stmt1 = 'INSERT INTO products (product_name, category_id, stock, price, '
             for i, spec_pair in enumerate(spec_pairs):
                 stmt1 += f'{spec_pair[0]}_id'
@@ -316,6 +355,16 @@ class Navigator:
         if(self.exists(table_name)):
             self.cursor.execute(f'DELETE FROM {table_name}')
             self.cursor.execute(f'ALTER TABLE {table_name} AUTO_INCREMENT = 0')
+
+    def format(self):
+        self.cursor.execute('SHOW TABLES')
+        tables = self.cursor.fetchall()
+        print(tables)
+        for table in tables:
+            self.cursor.execute(f'DROP TABLE {table[0]}')
+        self.db.commit
+        self.create_tables()
+        print('Database cleared')
     
     #TODO:  Add current inventory (num. of) column to products table
     
@@ -350,10 +399,15 @@ def console_add_type(navi: Navigator):
         if(val1 == 'x'):
             return
         
-        temp1 = temp1.split(', ')
-
-        for s in temp1:
-            vals.append(s)
+        temp2 = input('String (1) or num (2)?')
+        if(temp2 == 'x'):
+            return
+        if(temp2 == '1'):
+            temp2 = 1
+        if(temp2 == '2'):
+            temp2 = 2
+        
+        vals.append((temp1, temp2))
 
     if(vals != None):
         navi.add_part_type(val1, *vals)
@@ -434,6 +488,8 @@ if __name__ == '__main__':
                     + '\n5. Check if value exists in table'
                     + '\n6. Clear table'
                     + '\n7. Edit product'
+                    + '\n8. Create necessary tables'
+                    + '\n9. Format database'
                     + '\nx. Exit\n')
         
         if (val == 'x'):
@@ -460,3 +516,9 @@ if __name__ == '__main__':
         
         if (val == '7'):
             console_edit_product(navi)
+        
+        if (val == '8'):
+            navi.create_tables()
+
+        if (val == '9'):
+            navi.format()
