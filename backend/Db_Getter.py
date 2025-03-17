@@ -10,9 +10,8 @@ class Db_Getter:
         self.db = database
     
     def get_products(self):
-        return self.db.select(('products.product_name', 'part_types.part_type_name'),
-                              ('products', 'part_types'),
-                              ('products.part_type_id = part_types.part_type_id'))
+        return self.db.select(('product_name', 'part_type', 'price', 'stock', 'manufacturer'),
+                              'display_products')
     
     def get_specs(self, part_type:str):
         return self.db.select('*', f'{part_type}_specs')
