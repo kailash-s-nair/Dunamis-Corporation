@@ -1,0 +1,8 @@
+flask 
+flask_cors
+flask_mysqldb 
+flask_jwt_extended 
+werkzeug 
+tabulate 
+mysql
+app
