@@ -4,7 +4,7 @@ from unittesting import TestGetUser
 from unittesting import TestRegistration
 from unittesting import TestLogin
 
-from backendunittesting import TestNavigator
+from backendunittesting import TestBackendFunctions
 
 from similarItemTest import similarItemTest
 
@@ -17,7 +17,7 @@ def suite():
     test_suite.addTest(unittest.makeSuite(TestRegistration))
     test_suite.addTest(unittest.makeSuite(TestLogin))
 
-    test_suite.addTest(unittest.makeSuite(TestNavigator))
+    test_suite.addTest(unittest.makeSuite(TestBackendFunctions))
     test_suite.addTest(unittest.makeSuite(similarItemTest))
     
     return test_suite
