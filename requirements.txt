@@ -6,3 +6,4 @@ werkzeug
 tabulate 
 mysql
 app
+navigator
