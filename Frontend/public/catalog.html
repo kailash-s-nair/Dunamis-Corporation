@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Catalog Management</title>
+    <link rel="stylesheet" href="catalog.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Catalog Management</h2>
+        
+        <!-- Add New Item Form -->
+        <div>
+            <input type="text" id="itemName" placeholder="Item Name">
+            <input type="text" id="itemDescription" placeholder="Item Description">
+            <input type="number" id="itemPrice" placeholder="Price">
+            <input type="number" id="itemStock" placeholder="Stock">
+            <input type="text" id="itemPartType" placeholder="Part Type">
+            <button onclick="addItem()">Add</button>
+        </div>
+        
+        <!-- Catalog Table -->
+        <table border="1">
+            <thead>
+                <tr>
+                    <th onclick="sortTable(0)">ID 🔽</th>
+                    <th onclick="sortTable(1)">Name 🔽</th>
+                    <th onclick="sortTable(2)">Description 🔽</th>
+                    <th onclick="sortTable(3)">Created By 🔽</th>
+                    <th onclick="sortTable(4)">Price 🔽</th>
+                    <th onclick="sortTable(5)">Stock 🔽</th>
+                    <th onclick="sortTable(6)">Part Type 🔽</th>
+                    <th>Favorite</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="catalogTable">
+                <!-- Data will be inserted here dynamically -->
+            </tbody>
+        </table>
+    </div>
+    <script src="catalog.js" defer></script>
+</body>
+</html>

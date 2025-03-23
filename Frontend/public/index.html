@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login | Register</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Login</h2>
+        <input type="text" id="loginUser" placeholder="Username"> 
+        <input type="password" id="loginPass" placeholder="Password">
+        <button onclick="login()">Login</button>
+        <p>Don't have an account? <a href="#" onclick="showRegister()">Register</a></p>
+    </div>
+
+    <div id="registerForm" class="container" style="display: none;">
+        <h2>Register</h2>
+        <input type="text" id="regUser" placeholder="Username"> 
+        <input type="password" id="regPass" placeholder="Password">
+        <select id="regRole">
+            <option value="guest">Guest</option>
+            <option value="admin">Admin</option>
+        </select>
+        <button onclick="register()">Register</button>
+    </div>
+
+    <script src="script.js" defer></script>
+</body>
+</html>
