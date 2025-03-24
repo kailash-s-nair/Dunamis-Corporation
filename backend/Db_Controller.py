@@ -70,7 +70,7 @@ class Db_Controller():
         self.commit()
         print('Database cleared')
     
-    def create_spec_table(self, spec_name:str, type_num):
+    def create_spec_table(self, spec_name:str, type_num:int):
         '''Create a table for a new spec (for a part type).
         
         Parameters
@@ -100,8 +100,7 @@ class Db_Controller():
     
 
     def add_part_type(self, part_type_name:str, *spec_type_pairs:tuple[str,int]):
-        '''
-        Adds a part type.
+        '''Adds a part type.
         
         Parameters
         ----------
@@ -109,8 +108,7 @@ class Db_Controller():
             The name of the new part type.
         *spec_type_pairs:tuple[str,int]
             A spec name, followed by what type of spec it is, described as an integer value
-            (see: **create_spec_table()**). Repeatable.
-        '''
+            (see: **create_spec_table()**). Repeatable.'''
         columns1 = []
         columns2 = []
         columns3 = []
