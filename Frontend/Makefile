@@ -2,7 +2,7 @@
 SERVER_FILE = server.js
 NODE = node
 NPM = npm
-BROWSER = start http://localhost:3000/index.html
+BROWSER = start http://localhost:3000
 
 # Install dependencies
 install:

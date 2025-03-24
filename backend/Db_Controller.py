@@ -9,46 +9,54 @@ NUMBER = 2
 
 class Db_Controller():
     def __init__(self, database:Database|None=Database()):
+        '''Db_Controller initializer.'''
+        
         self.db = database
         self.editor = Db_Editor(self.db)
         self.getter = Db_Getter(self.db)
 
     def commit(self):
+        '''Commits changes to the database.'''
+        
         self.db.commit()
 
     def create_basic_tables(self):
+        '''Ensures basic tables are created.'''
+        
         self.editor.create_table('part_types',
-                                 'part_type_id INT NOT NULL AUTO_INCREMENT',
-                                 'part_type_name VARCHAR(20) NOT NULL',
-                                 'spec_count INT NOT NULL',
-                                 'PRIMARY KEY (part_type_id)')
+                                'part_type_id INT NOT NULL AUTO_INCREMENT',
+                                'part_type_name VARCHAR(20) NOT NULL',
+                                'spec_count INT NOT NULL',
+                                'PRIMARY KEY (part_type_id)')
         
         self.editor.create_table('manufacturers',
-                                 'manufacturer_id INT NOT NULL AUTO_INCREMENT',
-                                 'manufacturer_name VARCHAR(20) NOT NULL',
-                                 'PRIMARY KEY (manufacturer_id)')
+                                'manufacturer_id INT NOT NULL AUTO_INCREMENT',
+                                'manufacturer_name VARCHAR(20) NOT NULL',
+                                'PRIMARY KEY (manufacturer_id)')
         
         self.editor.create_table('products',
-                                 'product_id INT NOT NULL AUTO_INCREMENT',
-                                 'part_type_id INT NOT NULL',
-                                 'product_name VARCHAR(20) NOT NULL',
-                                 'stock INT NOT NULL',
-                                 'price INT NOT NULL',
-                                 'manufacturer_id INT NOT NULL',
-                                 'PRIMARY KEY (product_id)',
-                                 'FOREIGN KEY (part_type_id) REFERENCES part_types(part_type_id)',
-                                 'FOREIGN KEY (manufacturer_id) REFERENCES manufacturers(manufacturer_id)')
+                                'product_id INT NOT NULL AUTO_INCREMENT',
+                                'part_type_id INT NOT NULL',
+                                'product_name VARCHAR(20) NOT NULL',
+                                'stock INT NOT NULL',
+                                'price INT NOT NULL',
+                                'manufacturer_id INT NOT NULL',
+                                'PRIMARY KEY (product_id)',
+                                'FOREIGN KEY (part_type_id) REFERENCES part_types(part_type_id)',
+                                'FOREIGN KEY (manufacturer_id) REFERENCES manufacturers(manufacturer_id)')
         
         self.editor.create_table('display_products',
-                                 'product_name VARCHAR(20) NOT NULL',
-                                 'part_type VARCHAR(20) NOT NULL',
-                                 'stock INT NOT NULL',
-                                 'price INT NOT NULL',
-                                 'manufacturer VARCHAR(20) NOT NULL'
-                                 )
+                                'product_name VARCHAR(20) NOT NULL',
+                                'part_type VARCHAR(20) NOT NULL',
+                                'stock INT NOT NULL',
+                                'price INT NOT NULL',
+                                'manufacturer VARCHAR(20) NOT NULL'
+                                )
         self.commit()
     
     def format(self):
+        '''Clears all tables except for the basic tables, and empties them.'''
+        
         self.db.execute('SHOW TABLES')
         if self.db.exists('products'):
             self.db.execute('DROP TABLE products')
@@ -62,7 +70,18 @@ class Db_Controller():
         self.commit()
         print('Database cleared')
     
-    def create_spec_table(self, spec_name, type_num):
+    def create_spec_table(self, spec_name:str, type_num):
+        '''Create a table for a new spec (for a part type).
+        
+        Parameters
+        ----------
+        spec_name:str
+            The name of the spec.
+        type_num:int
+            The type of spec it is (word(s) or number).
+            1 (constant VARCHAR): 20-character string.
+            2 (constant NUMBER): Integer value.'''
+            
         var_type = 'VARCHAR (20)'
         if contains_illegal(spec_name):
             raise ValueError('Part type name contains illegal character(s)')
@@ -79,7 +98,19 @@ class Db_Controller():
                                         f'{spec_name}_val {var_type} NOT NULL',
                                         f'PRIMARY KEY ({spec_name}_id)')
     
+
     def add_part_type(self, part_type_name:str, *spec_type_pairs:tuple[str,int]):
+        '''
+        Adds a part type.
+        
+        Parameters
+        ----------
+        part_type_name:str
+            The name of the new part type.
+        *spec_type_pairs:tuple[str,int]
+            A spec name, followed by what type of spec it is, described as an integer value
+            (see: **create_spec_table()**). Repeatable.
+        '''
         columns1 = []
         columns2 = []
         columns3 = []
@@ -102,8 +133,8 @@ class Db_Controller():
                 var_type = 'INT'
 
             self.editor.insert(f'{part_type_name}_specs', # Insert spec into part type specs table
-                           ('spec_name', f'{spec}'),
-                           ('spec_var_form', type_num))
+                            ('spec_name', f'{spec}'),
+                            ('spec_var_form', type_num))
 
             if(not self.db.exists(spec)):
                 self.create_spec_table(spec, type_num)
@@ -118,6 +149,22 @@ class Db_Controller():
         self.editor.alter_table('display_products', *columns3)
     
     def add_product(self, product_name:str, part_type:str, stock:int, price:int, manufacturer:str, *specs:tuple[str,any]):
+        '''Add product of a given part type.
+        
+        Parameters
+        ----------
+        product_name:str
+            The name of the product.
+        part_type:str
+            The name of the part type the product is.
+        stock:int
+            The number of the product.
+        price:int
+            The price of the product.
+        manufacturer:str
+            The manufacturer of the product.
+        *specs:tuple[str,any]
+            Tuple, containing spec and spec value. Repeatable.'''
         if not self.db.exists_in('manufacturers', 'manufacturer_name', manufacturer):
             self.editor.insert('manufacturers', ('manufacturer_name', manufacturer))
 
@@ -144,6 +191,17 @@ class Db_Controller():
         self.commit()
     
     def edit_product(self, product_name:str, part_type:str, *attributes:tuple[str,any]):
+        '''Edit a product.
+        
+        Parameters
+        ----------
+        product_name:str
+            The name of a product.
+        part_type:str
+            The type of part the product is.
+        *attributes:tuple[str,any]
+            The attribute you want to alter, followed by the new value.'''
+        
         columns1 = []
         columns2 = []
         for att in attributes:
@@ -176,6 +234,13 @@ class Db_Controller():
         self.commit()
 
     def get_products(self):
+        '''Gets products.
+        
+        Returns
+        -------
+        List[tuple:any]
+            A list of tuples.'''
+        
         self.getter.get_products()
         
         

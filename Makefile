@@ -1,5 +1,10 @@
+PYTHON = python3 -m
+CHECK_PIP = ensurepip
+INSTALL_REQUIREMENTS = pip install -r requirements.txt
+RUN_FRONTEND = frontendgui
+
 setup: requirements.txt
-	python3 -m ensurepip
-	python3 -m pip install -r requirements.txt
+	$(PYTHON) $(CHECK_PIP)
+	$(PYTHON) $(INSTALL_REQUIREMENTS)
 run: Frontend, backend
-	python3 -m frontendgui
+	$(PYTHON) $(RUN_FRONTEND)

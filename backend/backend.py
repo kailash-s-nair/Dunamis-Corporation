@@ -4,6 +4,7 @@ def is_close(val):
     return (val == 'x')
 
 def console_add_type(controller:Db_Controller):
+    '''Add a part type by console.'''
     vals = []
     val1 = input('Create part type name (x to cancel):\n>')
             
@@ -34,6 +35,7 @@ def console_add_type(controller:Db_Controller):
         (f'New part type {val} successfully created')
 
 def console_add_product(controller: Db_Controller):
+    '''Add product by console.'''
     vals = []
     val1 = input('Enter product name (x to cancel):\n>')
     if(val1 == 'x'):
@@ -78,6 +80,7 @@ def console_add_product(controller: Db_Controller):
     print(f'New part type {val} successfully created')
 
 def console_edit_product(controller: Db_Controller):
+    '''Edit product by console.'''
     vals = []
     val1 = input('Enter product name (x to cancel):\n>')
     if(is_close(val1)):
@@ -109,6 +112,7 @@ def console_edit_product(controller: Db_Controller):
     controller.edit_product(val1, val2, *vals)
 
 if __name__ == '__main__':
+    '''Code that runs if backend.py is opened directly.'''
     controller = Db_Controller()
 
     while(True):
