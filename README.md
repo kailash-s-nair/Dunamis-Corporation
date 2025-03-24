@@ -13,7 +13,7 @@ Run frontendgui.py. You can run it from a terminal/command line using **python f
 
 ![image](https://github.com/user-attachments/assets/de1ca0f9-4767-4999-b86f-8f81fdb86164)
 
-The program is entirely mouse controlled.
+The program is entirely mouse controlled. Make sure that when adding items they do not include punctuation.
 
 # Additional Info
 
