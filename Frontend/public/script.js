@@ -2,23 +2,20 @@ async function login() {
     const username = document.getElementById('loginUser').value;
     const password = document.getElementById('loginPass').value;
 
-    const response = await fetch('http://localhost:3000/login', {
+    const response = await fetch('/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
     });
 
     const result = await response.json();
-    console.log("Login Response:", result); // Debugging output
 
     if (response.ok) {
         localStorage.setItem('userId', result.user.id);
         localStorage.setItem('username', result.user.username);
+        localStorage.setItem('name', result.user.name);
+        localStorage.setItem('email', result.user.email);
         localStorage.setItem('role', result.user.role);
-
-        console.log("Stored userId:", localStorage.getItem('userId')); // Debugging output
-
-        alert(result.message);
         window.location.href = "catalog.html";
     } else {
         alert(result.message);
@@ -26,24 +23,16 @@ async function login() {
 }
 
 async function register() {
-    const usernameInput = document.getElementById('regUser');
-    const passwordInput = document.getElementById('regPass');
-    const roleInput = document.getElementById('regRole');
+    const name = document.getElementById('regName').value;
+    const email = document.getElementById('regEmail').value;
+    const username = document.getElementById('regUser').value;
+    const password = document.getElementById('regPass').value;
+    const role = document.getElementById('regRole').value;
 
-    if (!usernameInput || !passwordInput || !roleInput) {
-        console.error("Register input fields not found.");
-        alert("Error: Register fields are missing. Please refresh the page.");
-        return;
-    }
-
-    const username = usernameInput.value;
-    const password = passwordInput.value;
-    const role = roleInput.value;
-
-    const response = await fetch('http://localhost:3000/register', {
+    const response = await fetch('/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, role })
+        body: JSON.stringify({ name, email, username, password, role })
     });
 
     const result = await response.json();
@@ -51,10 +40,5 @@ async function register() {
 }
 
 function showRegister() {
-    const registerForm = document.getElementById('registerForm');
-    if (registerForm) {
-        registerForm.style.display = 'block';
-    } else {
-        console.error("Register form not found.");
-    }
+    document.getElementById('registerForm').style.display = 'block';
 }

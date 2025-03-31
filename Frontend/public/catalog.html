@@ -1,44 +1,126 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Catalog Management</title>
-    <link rel="stylesheet" href="catalog.css">
+  <meta charset="UTF-8" />
+  <title>Catalog Management</title>
+  <link rel="stylesheet" href="catalog.css" />
 </head>
 <body>
-    <div class="container">
-        <h2>Catalog Management</h2>
-        
-        <!-- Add New Item Form -->
-        <div>
-            <input type="text" id="itemName" placeholder="Item Name">
-            <input type="text" id="itemDescription" placeholder="Item Description">
-            <input type="number" id="itemPrice" placeholder="Price">
-            <input type="number" id="itemStock" placeholder="Stock">
-            <input type="text" id="itemPartType" placeholder="Part Type">
-            <button onclick="addItem()">Add</button>
-        </div>
-        
-        <!-- Catalog Table -->
-        <table border="1">
-            <thead>
-                <tr>
-                    <th onclick="sortTable(0)">ID 🔽</th>
-                    <th onclick="sortTable(1)">Name 🔽</th>
-                    <th onclick="sortTable(2)">Description 🔽</th>
-                    <th onclick="sortTable(3)">Created By 🔽</th>
-                    <th onclick="sortTable(4)">Price 🔽</th>
-                    <th onclick="sortTable(5)">Stock 🔽</th>
-                    <th onclick="sortTable(6)">Part Type 🔽</th>
-                    <th>Favorite</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="catalogTable">
-                <!-- Data will be inserted here dynamically -->
-            </tbody>
-        </table>
+  <!-- Profile Header -->
+  <div class="profile-bar">
+    <div class="theme-toggle">
+      <label for="darkModeToggle">Dark Mode</label>
+      <label class="switch">
+        <input type="checkbox" id="darkModeToggle">
+        <span class="slider round"></span>
+      </label>
     </div>
-    <script src="catalog.js" defer></script>
+  
+    <span onclick="openProfile()" style="cursor: pointer;">
+      Welcome, <strong id="nameDisplay"></strong>
+    </span>
+  </div>
+
+  <div class="container">
+    <h2>Catalog Management</h2>
+
+    <!-- Add New Item Form -->
+    <div id="addItemForm">
+      <select id="categorySelect" multiple style="width: 100%; padding: 8px;">
+        <!-- Dynamically filled by JS -->
+      </select>
+      <input type="text" id="itemName" placeholder="Item Name" />
+      <input type="text" id="itemDescription" placeholder="Item Description" />
+      <input type="number" id="itemPrice" placeholder="Price" />
+      <input type="number" id="itemStock" placeholder="Stock" />
+      <input type="text" id="itemPartType" placeholder="Part Type" />
+      <button onclick="addItem()">Add</button>
+    </div>
+
+    <!-- 🔍 Filter & Search Section -->
+    <div class="filter-container">
+      <div class="filter-row">
+        <input type="text" id="searchInput" placeholder="Search items..." />
+        <input type="number" id="minPrice" placeholder="Min Price" />
+        <input type="number" id="maxPrice" placeholder="Max Price" />
+        <label class="checkbox-label">
+          <input type="checkbox" id="inStockOnly" />
+          In Stock Only
+        </label>
+      </div>
+
+      <div class="filter-row">
+        <select id="createdByFilter">
+          <option value="">All Creators</option>
+          <!-- Filled via JS -->
+        </select>
+
+        <select id="partTypeFilter">
+          <option value="">Filter by Part Type</option>
+          <!-- Filled via JS -->
+        </select>
+
+        <button onclick="applyFilters()">Filter</button>
+      </div>
+    </div>
+
+    <!-- 📦 Catalog Table -->
+    <table border="1">
+      <thead>
+        <tr>
+          <th onclick="sortTable(0)">ID 🔽</th>
+          <th onclick="sortTable(1)">Name 🔽</th>
+          <th onclick="sortTable(2)">Description 🔽</th>
+          <th onclick="sortTable(3)">Created By 🔽</th>
+          <th onclick="sortTable(4)">Price 🔽</th>
+          <th onclick="sortTable(5)">Stock 🔽</th>
+          <th onclick="sortTable(6)">Part Type 🔽</th>
+          <th>Favorite</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="catalogTable">
+        <!-- JS renders items here -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 👤 Profile Modal -->
+  <div id="profileModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeProfile()">×</span>
+      <h3>Profile Settings</h3>
+
+      <div id="profileView">
+        <p><strong>Name:</strong> <span id="viewName"></span></p>
+        <p><strong>Email:</strong> <span id="viewEmail"></span></p>
+        <p><strong>Role:</strong> <span id="viewRole"></span></p>
+      </div>
+
+      <div id="profileEdit" style="display: none;">
+        <label for="editName"><strong>Name:</strong></label>
+        <input type="text" id="editName" />
+
+        <label for="editEmail"><strong>Email:</strong></label>
+        <input type="email" id="editEmail" />
+      </div>
+
+      <div id="passwordSection" style="margin-top: 20px;">
+        <h4>Change Password</h4>
+        <input type="password" id="currentPassword" placeholder="Current Password" /><br />
+        <input type="password" id="newPassword" placeholder="New Password" /><br />
+        <input type="password" id="confirmPassword" placeholder="Confirm New Password" /><br />
+        <button onclick="changePassword()">Update Password</button>
+      </div>
+
+      <div style="margin-top: 10px;">
+        <button id="editBtn" onclick="startEditing()">Edit Profile</button>
+        <button id="saveBtn" onclick="saveProfileChanges()" style="display: none;">Save Changes</button>
+        <button onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="catalog.js" defer></script>
 </body>
 </html>
